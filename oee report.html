@@ -1,0 +1,1904 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>OEE Auto Packing — Daily Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..900;1,14..32,300..900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet"/>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp }          from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+/* ── PASTE YOUR FIREBASE CONFIG HERE ──────────────────────────────── */
+const firebaseConfig = {
+  apiKey: "AIzaSyArEMVdVu5TcdJJ7trsHr-f7d66PtJ3Ddo",
+  authDomain: "oee-report-7d55a.firebaseapp.com",
+  projectId: "oee-report-7d55a",
+  storageBucket: "oee-report-7d55a.firebasestorage.app",
+  messagingSenderId: "754171773917",
+  appId: "1:754171773917:web:2b13f13ef1752ac360ec34"
+};
+/* ─────────────────────────────────────────────────────────────────── */
+
+try {
+  const app = initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+  window._fb = { db, ref, set, get, onValue, ok: true };
+  document.getElementById('fb-dot').className='dot green';
+  document.getElementById('fb-lbl').textContent='Firebase';
+} catch(e) {
+  window._fb = { ok: false };
+  document.getElementById('fb-dot').className='dot amber';
+  document.getElementById('fb-lbl').textContent='Local only';
+}
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* ══ TOKENS ═══════════════════════════════════════════════════════════════ */
+:root {
+  --bg:       #F0F4F8;
+  --surface:  #FFFFFF;
+  --surface2: #F7F9FC;
+  --border:   #E2E8F0;
+  --border2:  #CBD5E1;
+  --text:     #1E293B;
+  --muted:    #64748B;
+  --muted2:   #94A3B8;
+  --accent:   #2563EB;
+  --accent-l: #EFF6FF;
+  --green:    #16A34A;
+  --green-l:  #DCFCE7;
+  --amber:    #D97706;
+  --amber-l:  #FEF3C7;
+  --red:      #DC2626;
+  --red-l:    #FEE2E2;
+
+  /* Line colors */
+  --kimchi:   #E53E3E;
+  --ksauce:   #DD6B20;
+  --seaweed:  #2F855A;
+
+  /* Stop colors */
+  --stop-plan:   #8B5CF6;   /* planned */
+  --stop-bag:    #0891B2;   /* thay bao bì */
+  --stop-mat:    #D97706;   /* thiếu NL */
+  --stop-sku:    #7C3AED;   /* chuyển đổi SKU */
+  --stop-break:  #EF4444;   /* hư máy */
+  --stop-clean:  #F59E0B;   /* vệ sinh chỉnh máy */
+
+  --font: 'Inter', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --radius: 10px;
+  --shadow: 0 1px 4px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.06);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px;min-height:100vh}
+a{color:var(--accent)}
+input,select,textarea{font-family:inherit}
+
+/* ══ TOPBAR ════════════════════════════════════════════════════════════════ */
+#topbar{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:10px 20px;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:200;
+  box-shadow:0 1px 0 var(--border);
+}
+.logo{display:flex;align-items:center;gap:9px;margin-right:4px}
+.logo-icon{
+  width:32px;height:32px;border-radius:8px;flex-shrink:0;
+  background:linear-gradient(135deg,#2563EB,#7C3AED);
+  display:grid;place-items:center;font-size:15px;
+}
+.logo-name{font-size:14px;font-weight:800;color:var(--text);letter-spacing:-.3px}
+.logo-sub{font-size:10px;color:var(--muted);letter-spacing:.3px}
+
+#fb-status{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);white-space:nowrap}
+.dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+.dot.green{background:var(--green)}.dot.amber{background:var(--amber)}.dot.red{background:var(--red)}
+
+.tab-group{display:flex;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:3px;gap:2px}
+.tab-btn{
+  padding:5px 14px;border:none;border-radius:7px;cursor:pointer;
+  font:600 12px var(--font);background:transparent;color:var(--muted);
+  transition:all .15s;white-space:nowrap;
+}
+.tab-btn.active{background:var(--surface);color:var(--accent);
+  box-shadow:0 1px 3px rgba(0,0,0,.12);font-weight:700}
+
+#date-pick{
+  border:1px solid var(--border);border-radius:8px;
+  padding:5px 10px;font:600 12px var(--font);
+  background:var(--surface);color:var(--text);outline:none;
+}
+.shift-tag{
+  font:700 10px var(--font);padding:3px 9px;border-radius:99px;
+  letter-spacing:.5px;background:var(--accent-l);color:var(--accent);
+  border:1px solid #BFDBFE;white-space:nowrap;
+}
+
+.btn{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:6px 14px;border:none;border-radius:8px;cursor:pointer;
+  font:600 12px var(--font);transition:opacity .15s;white-space:nowrap;
+}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn:hover:not(:disabled){opacity:.85}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn-danger{background:var(--red-l);color:var(--red);border:1px solid #FECACA}
+.btn-sm{padding:4px 10px;font-size:11px}
+
+/* ══ MAIN LAYOUT ══════════════════════════════════════════════════════════ */
+#main{padding:18px 20px;max-width:1500px;margin:0 auto}
+
+/* ══ VIEWS ════════════════════════════════════════════════════════════════ */
+.view{display:none}.view.active{display:block}
+
+/* ══ PAGE HEADER ══════════════════════════════════════════════════════════ */
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+.page-title{font-size:17px;font-weight:800;color:var(--text)}
+.page-sub{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* ══ LINE TABS ════════════════════════════════════════════════════════════ */
+#line-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.line-tab{
+  display:flex;align-items:center;gap:7px;
+  padding:6px 14px;border-radius:9px;cursor:pointer;
+  font:600 12px var(--font);color:var(--muted);
+  background:var(--surface);border:1.5px solid var(--border);
+  transition:all .15s;
+}
+.line-tab:hover{border-color:var(--border2)}
+.line-tab.active{font-weight:700;color:#fff}
+.line-tab .pill{
+  font-size:10px;font-weight:700;border-radius:99px;padding:1px 7px;
+}
+
+/* ══ MACHINE PANEL ════════════════════════════════════════════════════════ */
+.machine-panel{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);margin-bottom:12px;
+  box-shadow:var(--shadow);overflow:hidden;
+}
+.machine-head{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;border-bottom:1px solid var(--border);
+  cursor:pointer;user-select:none;
+  border-left:4px solid transparent;
+}
+.machine-head:hover{background:var(--surface2)}
+.machine-head .name{font-size:13px;font-weight:800;flex:1}
+.machine-head .type-badge{
+  font-size:9px;font-weight:700;padding:2px 8px;
+  border-radius:5px;border:1px solid;letter-spacing:.5px;
+}
+
+/* mini OEE pills in head */
+.head-kpis{display:flex;align-items:center;gap:14px}
+.head-kpi .val{font:800 14px var(--mono);color:var(--muted2)}
+.head-kpi .lbl{font-size:9px;font-weight:700;color:var(--muted2);letter-spacing:.4px}
+
+/* ══ RUN LIST ═════════════════════════════════════════════════════════════ */
+.run-list{padding:12px 14px;display:grid;gap:10px}
+.run-card{
+  border:1.5px solid var(--border);border-radius:9px;
+  overflow:hidden;background:var(--surface2);
+}
+.run-head{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 12px;background:var(--surface);
+  border-bottom:1px solid var(--border);
+}
+.run-num{
+  width:22px;height:22px;border-radius:6px;
+  display:grid;place-items:center;
+  font:700 11px var(--mono);color:#fff;flex-shrink:0;
+}
+.run-time-badge{
+  font:600 11px var(--mono);color:var(--muted);
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:5px;padding:2px 8px;
+}
+.run-conflict{
+  font:600 11px var(--font);color:var(--red);
+  background:var(--red-l);border:1px solid #FECACA;
+  border-radius:5px;padding:2px 8px;
+}
+
+.run-body{padding:10px 12px;display:grid;gap:10px}
+
+/* field grid */
+.fg{display:grid;gap:8px}
+.fg-2{grid-template-columns:1fr 1fr}
+.fg-3{grid-template-columns:1fr 1fr 1fr}
+.fg-4{grid-template-columns:1fr 1fr 1fr 1fr}
+.fg-5{grid-template-columns:repeat(5,1fr)}
+.fg-6{grid-template-columns:repeat(6,1fr)}
+.fg-7{grid-template-columns:repeat(7,1fr)}
+
+.field label{
+  display:block;font-size:9px;font-weight:700;color:var(--muted);
+  letter-spacing:.6px;text-transform:uppercase;margin-bottom:4px;
+}
+.field input,.field select,.field textarea{
+  width:100%;background:var(--surface);border:1.5px solid var(--border);
+  border-radius:7px;padding:6px 9px;font:500 12px var(--font);
+  color:var(--text);outline:none;transition:border-color .15s;
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.field input.highlight{border-color:#93C5FD;background:#EFF6FF}
+.field textarea{resize:vertical;min-height:40px}
+.field input[type=number],.field input[type=time]{font-family:var(--mono)}
+.computed-field{
+  background:var(--surface2);border:1.5px solid var(--border);
+  border-radius:7px;padding:6px 9px;
+  font:600 12px var(--mono);color:var(--accent);
+  min-height:32px;display:flex;align-items:center;
+  cursor:help;
+}
+.computed-field.auto-label::after{
+  content:'AUTO';font-size:8px;font-weight:800;
+  background:var(--accent);color:#fff;
+  border-radius:3px;padding:1px 4px;margin-left:6px;letter-spacing:.5px;
+}
+
+/* stop sub-section */
+.stop-group{
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:8px;padding:10px 12px;
+}
+.stop-group-title{
+  font-size:9px;font-weight:800;color:var(--muted);
+  letter-spacing:.7px;text-transform:uppercase;
+  margin-bottom:8px;display:flex;align-items:center;gap:6px;
+}
+.stop-group-title .color-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* run OEE summary bar */
+.run-oee-bar{
+  display:flex;align-items:center;gap:14px;
+  padding:8px 12px;background:var(--surface);
+  border-top:1px solid var(--border);flex-wrap:wrap;
+}
+.kpi-mini{text-align:center}
+.kpi-mini .v{font:800 14px var(--mono)}
+.kpi-mini .l{font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.5px}
+.oee-big{font:900 20px var(--mono);margin-left:auto}
+
+/* add run btn */
+.add-run-btn{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:10px;border:2px dashed var(--border);border-radius:9px;
+  cursor:pointer;font:600 12px var(--font);color:var(--muted);
+  background:transparent;transition:all .15s;width:100%;
+}
+.add-run-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-l)}
+
+/* autocomplete */
+.ac-wrap{position:relative}
+.ac-list{
+  position:absolute;top:100%;left:0;right:0;z-index:50;
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:8px;box-shadow:var(--shadow);
+  max-height:180px;overflow-y:auto;margin-top:2px;
+}
+.ac-item{
+  padding:7px 10px;cursor:pointer;font-size:12px;
+  display:flex;align-items:center;gap:8px;
+}
+.ac-item:hover{background:var(--accent-l)}
+.ac-item .ac-code{font:600 11px var(--mono);color:var(--muted)}
+.ac-item .ac-name{font-weight:600;flex:1}
+
+/* ══ CATALOG VIEW ═════════════════════════════════════════════════════════ */
+.catalog-table-wrap{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);
+}
+table.ct{width:100%;border-collapse:collapse;font-size:12px}
+table.ct th{
+  padding:9px 12px;text-align:left;
+  font-size:9px;font-weight:800;color:var(--muted);
+  letter-spacing:.6px;background:var(--surface2);
+  border-bottom:1px solid var(--border);white-space:nowrap;
+}
+table.ct td{padding:8px 12px;border-bottom:1px solid var(--border)}
+table.ct tr:last-child td{border-bottom:none}
+table.ct tr:hover td{background:var(--surface2)}
+.cat-actions{display:flex;gap:6px}
+
+/* ══ DASHBOARD ════════════════════════════════════════════════════════════ */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr) 260px;gap:12px;margin-bottom:16px}
+.kpi-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:14px 16px;
+  box-shadow:var(--shadow);
+}
+.kpi-card-title{font-size:10px;font-weight:800;color:var(--muted);letter-spacing:.6px;margin-bottom:10px}
+
+/* gauge */
+.gauge-svg-wrap{display:flex;justify-content:center;margin-bottom:6px}
+.gauge-range-row{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-family:var(--mono)}
+.spark-wrap{height:32px;margin-top:6px}
+.prev-line{font-size:10px;color:var(--muted);margin-top:4px}
+.prev-line b{color:var(--text);font-family:var(--mono)}
+
+/* other KPIs */
+.other-kpis-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow)}
+.ok-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)}
+.ok-row:last-child{border-bottom:none}
+.ok-row .ok-name{font-size:12px;font-weight:600;flex:1}
+.ok-row .ok-val{font:700 12px var(--mono);color:var(--text)}
+
+/* Gantt */
+.gantt-section{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:14px 16px;
+  box-shadow:var(--shadow);margin-bottom:16px;
+}
+.gantt-title{font-size:13px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.gantt-legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:600;color:var(--muted)}
+.legend-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+
+.gantt-scroll{overflow-x:auto}
+.gantt-inner{min-width:900px}
+.gantt-row{display:flex;align-items:center;margin-bottom:4px;min-height:32px}
+.gantt-label{
+  width:130px;flex-shrink:0;
+  font-size:11px;font-weight:600;color:var(--muted);
+  padding-right:10px;text-align:right;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;
+}
+.gantt-track{flex:1;height:24px;background:var(--surface2);border-radius:5px;position:relative;border:1px solid var(--border)}
+.gantt-bar{
+  position:absolute;height:100%;border-radius:4px;
+  display:flex;align-items:center;padding:0 5px;
+  font:600 9px var(--mono);color:#fff;
+  overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+  cursor:default;transition:opacity .15s;
+}
+.gantt-bar:hover{opacity:.85;z-index:10}
+.gantt-axis{
+  display:flex;margin-left:130px;
+  font:600 9px var(--mono);color:var(--muted);
+  border-top:1px solid var(--border);padding-top:4px;margin-top:2px;
+}
+.gantt-tick{flex:1;text-align:center}
+
+/* detail table */
+.detail-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+.detail-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border)}
+table.dt{width:100%;border-collapse:collapse;font-size:12px}
+table.dt th{padding:8px 12px;text-align:left;font-size:9px;font-weight:800;color:var(--muted);letter-spacing:.6px;background:var(--surface2);border-bottom:1px solid var(--border);white-space:nowrap}
+table.dt td{padding:7px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+table.dt tr:last-child td{border-bottom:none}
+table.dt tr:hover td{background:var(--surface2)}
+.oee-chip{display:inline-block;padding:2px 9px;border-radius:5px;font:700 11px var(--mono)}
+.num{font-family:var(--mono)}
+.badge-line{display:inline-flex;align-items:center;border-radius:5px;padding:2px 8px;font-size:10px;font-weight:700;border:1px solid transparent}
+
+/* ══ MODAL ════════════════════════════════════════════════════════════════ */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(15,23,42,.4);
+  z-index:500;display:none;place-items:center;
+}
+.modal-overlay.open{display:grid}
+.modal{
+  background:var(--surface);border-radius:14px;
+  padding:22px 24px;min-width:340px;max-width:520px;width:90vw;
+  box-shadow:0 20px 60px rgba(0,0,0,.15);
+}
+.modal-title{font-size:15px;font-weight:800;margin-bottom:16px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+
+/* ══ TOAST ════════════════════════════════════════════════════════════════ */
+#toast{
+  position:fixed;bottom:20px;right:20px;z-index:999;
+  background:var(--text);color:#fff;
+  border-radius:9px;padding:10px 16px;
+  font:600 12px var(--font);
+  display:none;align-items:center;gap:8px;
+  box-shadow:0 8px 32px rgba(0,0,0,.2);
+  max-width:320px;
+}
+
+/* ══ MISC ═════════════════════════════════════════════════════════════════ */
+.section-sep{
+  display:flex;align-items:center;gap:8px;
+  font-size:9px;font-weight:800;color:var(--muted);
+  letter-spacing:.7px;margin:6px 0;
+}
+.section-sep::before,.section-sep::after{content:'';flex:1;height:1px;background:var(--border)}
+
+.empty-state{
+  text-align:center;padding:32px;color:var(--muted);
+  font-size:13px;
+}
+.empty-state .icon{font-size:32px;margin-bottom:8px}
+
+.gap-pos{color:var(--green);font-weight:700}
+.gap-neg{color:var(--red);font-weight:700}
+
+@media(max-width:800px){
+  .kpi-grid{grid-template-columns:1fr 1fr}
+  .fg-5,.fg-6,.fg-7{grid-template-columns:repeat(2,1fr)}
+  .fg-4{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ TOP BAR ══════════════════════════════════════════════════════════════ -->
+<div id="topbar">
+  <div class="logo">
+    <div class="logo-icon">⚙</div>
+    <div>
+      <div class="logo-name">OEE Packing</div>
+      <div class="logo-sub">Auto Machine Report</div>
+    </div>
+  </div>
+
+  <div id="fb-status">
+    <span class="dot amber" id="fb-dot"></span>
+    <span id="fb-lbl">Connecting…</span>
+  </div>
+
+  <!-- shift date picker -->
+  <div style="display:flex;align-items:center;gap:6px">
+    <span style="font-size:11px;color:var(--muted)">Ca ngày</span>
+    <input type="date" id="date-pick" style="border:1px solid var(--border);border-radius:8px;padding:5px 10px;font:600 12px var(--font);background:var(--surface);color:var(--text);outline:none"/>
+    <span class="shift-tag" id="shift-label">7:00 → 7:00+1</span>
+  </div>
+
+  <div class="tab-group">
+    <button class="tab-btn active" onclick="switchView('input')">✏ Nhập liệu</button>
+    <button class="tab-btn" onclick="switchView('dashboard')">📊 Dashboard</button>
+    <button class="tab-btn" onclick="switchView('catalog')">📋 Danh mục SP</button>
+  </div>
+
+  <button class="btn btn-ghost" onclick="exportExcel()" style="color:var(--green);border-color:#BBF7D0">📊 Export Excel</button>
+  <button class="btn btn-primary" id="save-btn" onclick="saveAll()">💾 Lưu</button>
+</div>
+
+<!-- ══ MAIN ════════════════════════════════════════════════════════════════ -->
+<div id="main">
+
+<!-- ─── INPUT VIEW ─────────────────────────────────────────────────────── -->
+<div id="view-input" class="view active">
+  <div class="page-header">
+    <div>
+      <div class="page-title" id="input-title">Nhập liệu ca ngày</div>
+      <div class="page-sub">Mỗi máy có thể có nhiều lần chạy (run) trong ca. Thời gian không được chồng lên nhau.</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span id="fill-count" style="font-size:11px;color:var(--muted)"></span>
+      <button class="btn btn-ghost btn-sm" onclick="collapseAll()">Thu gọn tất cả</button>
+    </div>
+  </div>
+
+  <div id="line-tabs"></div>
+  <div id="machine-forms"></div>
+</div>
+
+<!-- ─── DASHBOARD VIEW ─────────────────────────────────────────────────── -->
+<div id="view-dashboard" class="view">
+  <div class="page-header">
+    <div>
+      <div class="page-title">📊 OEE Overview</div>
+      <div class="page-sub" id="dash-sub">Tổng hợp ca ngày</div>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="exportExcel()">⬇ Export Excel</button>
+  </div>
+
+  <!-- KPI gauges -->
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-card-title">OEE</div>
+      <div class="gauge-svg-wrap" id="g-oee"></div>
+      <div class="gauge-range-row"><span>0</span><span>%</span><span>100</span></div>
+      <div class="spark-wrap" id="sp-oee"></div>
+      <div class="prev-line">Ca trước: <b id="prev-oee">—</b></div>
+    </div>
+    <div class="kpi-card"><div class="kpi-card-title">Availability</div>
+      <div class="gauge-svg-wrap" id="g-avail"></div>
+      <div class="gauge-range-row"><span>0</span><span>%</span><span>100</span></div>
+      <div class="spark-wrap" id="sp-avail"></div>
+      <div class="prev-line">Ca trước: <b id="prev-avail">—</b></div>
+    </div>
+    <div class="kpi-card"><div class="kpi-card-title">Performance</div>
+      <div class="gauge-svg-wrap" id="g-perf"></div>
+      <div class="gauge-range-row"><span>0</span><span>%</span><span>100</span></div>
+      <div class="spark-wrap" id="sp-perf"></div>
+      <div class="prev-line">Ca trước: <b id="prev-perf">—</b></div>
+    </div>
+    <div class="kpi-card"><div class="kpi-card-title">Quality</div>
+      <div class="gauge-svg-wrap" id="g-qual"></div>
+      <div class="gauge-range-row"><span>0</span><span>%</span><span>100</span></div>
+      <div class="spark-wrap" id="sp-qual"></div>
+      <div class="prev-line">Ca trước: <b id="prev-qual">—</b></div>
+    </div>
+    <div class="other-kpis-card">
+      <div class="kpi-card-title" style="margin-bottom:8px">Other KPIs</div>
+      <div class="ok-row"><div class="dot green"></div><div class="ok-name">Total Passed</div><div class="ok-val" id="ok-passed">—</div></div>
+      <div class="ok-row"><div class="dot red"></div><div class="ok-name">Total Rejected</div><div class="ok-val" id="ok-rej">—</div></div>
+      <div class="ok-row"><div class="dot amber"></div><div class="ok-name">Unplanned stops</div><div class="ok-val" id="ok-unplan">—</div></div>
+      <div class="ok-row"><div class="dot" style="background:var(--stop-plan)"></div><div class="ok-name">Planned stops</div><div class="ok-val" id="ok-plan">—</div></div>
+      <div class="ok-row"><div class="dot" style="background:#2563EB"></div><div class="ok-name">Machines reported</div><div class="ok-val" id="ok-machines">—</div></div>
+    </div>
+  </div>
+
+  <!-- Gantt / Machine status -->
+  <div class="gantt-section">
+    <div class="gantt-title">
+      📊 Machine Status — Gantt Chart
+      <span style="font-size:11px;font-weight:400;color:var(--muted)" id="gantt-range"></span>
+    </div>
+    <div class="gantt-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#22C55E"></div>Running</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--stop-plan)"></div>Dừng có KH (họp/vệ sinh/giải lao)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--stop-bag)"></div>Thay bao bì</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--stop-mat)"></div>Thiếu NL</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--stop-sku)"></div>Chuyển đổi SKU</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--stop-break)"></div>Hư máy</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--stop-clean)"></div>Vệ sinh/Chỉnh máy</div>
+    </div>
+    <div class="gantt-scroll"><div class="gantt-inner" id="gantt-inner"></div></div>
+  </div>
+
+  <!-- Detail table -->
+  <div class="detail-section">
+    <div class="detail-head">
+      <span style="font-weight:800;font-size:13px">Chi tiết từng Run</span>
+    </div>
+    <div style="overflow-x:auto"><table class="dt" id="detail-table"></table></div>
+  </div>
+</div>
+
+<!-- ─── CATALOG VIEW ───────────────────────────────────────────────────── -->
+<div id="view-catalog" class="view">
+  <div class="page-header">
+    <div>
+      <div class="page-title">📋 Danh mục Sản phẩm</div>
+      <div class="page-sub">Thêm sản phẩm vào đây để autocomplete khi nhập liệu</div>
+    </div>
+    <button class="btn btn-primary" onclick="openCatalogModal()">+ Thêm sản phẩm</button>
+  </div>
+  <div class="catalog-table-wrap">
+    <table class="ct">
+      <thead><tr>
+        <th>Mã hàng (Code)</th><th>Tên hàng (Item)</th><th>Net Weight (G)</th>
+        <th>Designed (ea/h)</th><th>Target (ea/h)</th><th>Line áp dụng</th><th></th>
+      </tr></thead>
+      <tbody id="catalog-tbody"></tbody>
+    </table>
+    <div id="catalog-empty" class="empty-state"><div class="icon">📦</div>Chưa có sản phẩm. Nhấn "Thêm sản phẩm" để bắt đầu.</div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<!-- ══ CATALOG MODAL ══════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="cat-modal">
+  <div class="modal">
+    <div class="modal-title" id="cat-modal-title">Thêm sản phẩm</div>
+    <div class="fg fg-2" style="gap:10px">
+      <div class="field"><label>Mã hàng (Code) *</label><input id="cm-code" placeholder="1024533"/></div>
+      <div class="field"><label>Tên hàng (Item) *</label><input id="cm-name" placeholder="FERT_XỐT GỪNG SCHWAN"/></div>
+      <div class="field"><label>Net Weight (G)</label><input id="cm-net" type="number" placeholder="28"/></div>
+      <div class="field"><label>Designed (ea/h)</label><input id="cm-designed" type="number" placeholder="2520"/></div>
+      <div class="field"><label>Target (ea/h)</label><input id="cm-target" type="number" placeholder="2520"/></div>
+      <div class="field"><label>Line áp dụng</label>
+        <select id="cm-line">
+          <option value="">Tất cả</option>
+          <option value="Kimchi">Kimchi</option>
+          <option value="Ksauce">Ksauce</option>
+          <option value="Seaweed Seasoning">Seaweed Seasoning</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeCatalogModal()">Huỷ</button>
+      <button class="btn btn-primary" onclick="saveCatalogItem()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOAST ══════════════════════════════════════════════════════════════ -->
+<div id="toast"></div>
+
+<!-- ══ TOOLTIP ═══════════════════════════════════════════════════════════ -->
+<div id="tooltip" style="position:fixed;z-index:999;background:#1E293B;color:#fff;font-size:11px;font-weight:600;padding:5px 10px;border-radius:6px;pointer-events:none;display:none;white-space:nowrap"></div>
+
+<script>
+'use strict';
+/* ════════════════════════════════════════════════════════════════════════════
+   DATA MODEL
+   store[shiftDate][machineId] = {
+     runs: [
+       {
+         id, startTime, endTime, nextDay,   ← overnight: endTime on next day?
+         item, code, netG, designed, target,
+         actual, passed, rejXray, rejected,
+         stopMeeting, stopHygiene, stopBreak,   ← planned stops (minutes)
+         stopBag, stopMat, stopSku, stopMachine, stopClean,  ← unplanned
+         reason
+       }, ...
+     ]
+   }
+   catalog = [ { id, code, name, netG, designed, target, line }, ... ]
+════════════════════════════════════════════════════════════════════════════ */
+
+const LINES = {
+  'Kimchi':             { color:'#E53E3E', bg:'#FFF5F5', pill:'#FED7D7', machines:[{id:'K-R1',name:'Rotary 1',type:'Rotary'},{id:'K-R2',name:'Rotary 2',type:'Rotary'}] },
+  'Ksauce':             { color:'#DD6B20', bg:'#FFFAF0', pill:'#FEEBC8', machines:[{id:'KS-R1',name:'Rotary 1',type:'Rotary'},{id:'KS-S1',name:'Sachet 1',type:'Sachet'},{id:'KS-S2',name:'Sachet 2',type:'Sachet'},{id:'KS-S3',name:'Sachet 3',type:'Sachet'},{id:'KS-S4',name:'Sachet 4',type:'Sachet'}] },
+  'Seaweed Seasoning':  { color:'#2F855A', bg:'#F0FFF4', pill:'#C6F6D5', machines:[{id:'SW-P1',name:'Pillow 1',type:'Pillow'},{id:'SW-P2',name:'Pillow 2',type:'Pillow'}] }
+};
+const ALL_MACHINES = Object.entries(LINES).flatMap(([line,cfg])=>cfg.machines.map(m=>({...m,line})));
+
+// ── State ──────────────────────────────────────────────────────────────────
+let store    = {};   // store[date][machineId] = { runs:[] }
+let catalog  = [];   // product catalog
+let activeDate = todayStr();
+let activeLine = 'Kimchi';
+let currentView = 'input';
+let editCatIdx  = -1;  // -1 = new, else index
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function todayStr(){ return new Date().toISOString().split('T')[0]; }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function oeeColor(v){ return v>=85?'#16A34A':v>=70?'#D97706':'#DC2626'; }
+function pct(v){ return isNaN(v)||v===null?'—':v.toFixed(1)+'%'; }
+function fmtNum(v){ return v?parseInt(v).toLocaleString():'—'; }
+
+// time helpers — supports overnight
+function t2min(t, nextDay=false){
+  if(!t) return null;
+  const [h,m] = t.split(':').map(Number);
+  return h*60 + m + (nextDay?1440:0);
+}
+function min2hm(m){ if(m===null||isNaN(m))return'—'; const hh=Math.floor(m/60)%24,mm=m%60; return `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`; }
+function minDiff(startT, startND, endT, endND){
+  const s=t2min(startT,startND), e=t2min(endT,endND);
+  if(s===null||e===null) return 0;
+  return Math.max(0, e-s);
+}
+
+// OEE calc for one run
+function calcRunOEE(r){
+  const opMin    = minDiff(r.startTime,r.startNextDay,r.endTime,r.endNextDay);
+  const planMin  = (+r.stopMeeting||0)+(+r.stopHygiene||0)+(+r.stopBreak||0);
+  const unplanMin= (+r.stopBag||0)+(+r.stopMat||0)+(+r.stopSku||0)+(+r.stopMachine||0)+(+r.stopClean||0);
+  // Operation time planned = total op time minus planned stops
+  const opPlanned = opMin - planMin;
+  // Real operation time = op planned minus unplanned stops
+  const realMin   = opPlanned - unplanMin;
+
+  const designed = +r.designed||0;
+  const passed   = +r.passed  ||0;
+  const totalOut = passed + (+r.rejXray||0) + (+r.rejected||0);
+
+  // Actual (ea/h) auto-calculated: passed / real op hours
+  const actualCalc = realMin>0 ? passed/(realMin/60) : 0;
+
+  // Availability = Real op time / Operation time planned (excluding planned stops)
+  const avail = opPlanned>0 ? (realMin/opPlanned)*100 : 0;
+  // Performance = Actual rate / Designed rate
+  const perf  = designed>0 ? (actualCalc/designed)*100 : 0;
+  // Quality = Passed / Total output
+  const qual  = totalOut>0 ? (passed/totalOut)*100 : 0;
+  const oee   = (avail*perf*qual)/1e4;
+
+  return {
+    opMin, planMin, unplanMin, opPlanned, realMin,
+    actualCalc: isFinite(actualCalc)?actualCalc:0,
+    avail:  isFinite(avail)?avail:0,
+    perf:   isFinite(perf)?perf:0,
+    qual:   isFinite(qual)?qual:0,
+    oee:    isFinite(oee)?oee:0,
+    passed, totalOut
+  };
+}
+
+// Weighted average OEE across runs
+function avgCalcs(runs){
+  if(!runs||!runs.length) return {avail:0,perf:0,qual:0,oee:0,opMin:0,opPlanned:0,realMin:0};
+  let totOp=0,totOpPlanned=0,totReal=0,totPassed=0,totOut=0,sumAvail=0,sumPerf=0;
+  runs.forEach(r=>{
+    const c=calcRunOEE(r);
+    totOp+=c.opMin; totOpPlanned+=c.opPlanned; totReal+=c.realMin;
+    // weight by opPlanned for avail, by realMin for perf
+    sumAvail+=c.avail*c.opPlanned;
+    sumPerf +=c.perf *c.realMin;
+    totPassed+=c.passed; totOut+=c.totalOut;
+  });
+  const avail=totOpPlanned>0?sumAvail/totOpPlanned:0;
+  const perf =totReal>0?sumPerf/totReal:0;
+  const qual =totOut>0?(totPassed/totOut)*100:0;
+  return {avail,perf,qual,oee:(avail*perf*qual)/1e4,opMin:totOp,opPlanned:totOpPlanned,realMin:totReal};
+}
+
+// ── Data accessors ─────────────────────────────────────────────────────────
+function getMachineData(date, mid){ return (store[date]&&store[date][mid]) ? store[date][mid] : {runs:[]}; }
+function setMachineData(date, mid, data){ if(!store[date])store[date]={}; store[date][mid]=data; }
+function getRuns(date, mid){ return getMachineData(date,mid).runs||[]; }
+
+function newRun(){ return { id:uid(), startTime:'07:00', startNextDay:false, endTime:'07:00', endNextDay:true, item:'',code:'',netG:'',designed:'',target:'',passed:'',rejXray:'',rejected:'', stopMeeting:'0',stopHygiene:'0',stopBreak:'0', stopBag:'0',stopMat:'0',stopSku:'0',stopMachine:'0',stopClean:'0', reason:'' }; }
+
+// ── Conflict detection ─────────────────────────────────────────────────────
+function runsOverlap(a, b){
+  const as=t2min(a.startTime,a.startNextDay), ae=t2min(a.endTime,a.endNextDay);
+  const bs=t2min(b.startTime,b.startNextDay), be=t2min(b.endTime,b.endNextDay);
+  if(as===null||ae===null||bs===null||be===null) return false;
+  return as<be && bs<ae;
+}
+function checkConflicts(runs){
+  const conflicts = new Set();
+  for(let i=0;i<runs.length;i++) for(let j=i+1;j<runs.length;j++) if(runsOverlap(runs[i],runs[j])){ conflicts.add(runs[i].id); conflicts.add(runs[j].id); }
+  return conflicts;
+}
+
+// ══ CATALOG ═══════════════════════════════════════════════════════════════
+function saveCatalogToStorage(){ try{ localStorage.setItem('oee_catalog',JSON.stringify(catalog)); }catch(e){} }
+function loadCatalogFromStorage(){ try{ const d=localStorage.getItem('oee_catalog'); if(d) catalog=JSON.parse(d); }catch(e){} }
+
+function catLookup(code){
+  return catalog.find(c=>c.code.toLowerCase()===code.toLowerCase())||null;
+}
+function catSearch(q, line){
+  q=q.toLowerCase();
+  return catalog.filter(c=>(!line||!c.line||c.line===line)&&(c.code.toLowerCase().includes(q)||c.name.toLowerCase().includes(q))).slice(0,8);
+}
+
+function renderCatalog(){
+  const tbody=document.getElementById('catalog-tbody');
+  const empty=document.getElementById('catalog-empty');
+  if(!catalog.length){ tbody.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  tbody.innerHTML=catalog.map((c,i)=>`<tr>
+    <td class="num">${c.code}</td>
+    <td style="font-weight:600">${c.name}</td>
+    <td class="num">${c.netG||'—'}</td>
+    <td class="num">${c.designed||'—'}</td>
+    <td class="num">${c.target||'—'}</td>
+    <td>${c.line||'Tất cả'}</td>
+    <td><div class="cat-actions">
+      <button class="btn btn-ghost btn-sm" onclick="editCatalogItem(${i})">✏ Sửa</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteCatalogItem(${i})">✕</button>
+    </div></td>
+  </tr>`).join('');
+}
+
+function openCatalogModal(){ editCatIdx=-1; document.getElementById('cat-modal-title').textContent='Thêm sản phẩm'; ['code','name','net','designed','target'].forEach(f=>document.getElementById('cm-'+f).value=''); document.getElementById('cm-line').value=''; document.getElementById('cat-modal').classList.add('open'); }
+function closeCatalogModal(){ document.getElementById('cat-modal').classList.remove('open'); }
+function editCatalogItem(i){ editCatIdx=i; const c=catalog[i]; document.getElementById('cat-modal-title').textContent='Sửa sản phẩm'; document.getElementById('cm-code').value=c.code; document.getElementById('cm-name').value=c.name; document.getElementById('cm-net').value=c.netG||''; document.getElementById('cm-designed').value=c.designed||''; document.getElementById('cm-target').value=c.target||''; document.getElementById('cm-line').value=c.line||''; document.getElementById('cat-modal').classList.add('open'); }
+function deleteCatalogItem(i){ catalog.splice(i,1); saveCatalogToStorage(); renderCatalog(); toast('🗑 Đã xoá sản phẩm'); }
+function saveCatalogItem(){
+  const code=document.getElementById('cm-code').value.trim();
+  const name=document.getElementById('cm-name').value.trim();
+  if(!code||!name){ toast('⚠ Vui lòng nhập Code và Tên hàng','#D97706'); return; }
+  const item={ id:uid(), code, name, netG:document.getElementById('cm-net').value, designed:document.getElementById('cm-designed').value, target:document.getElementById('cm-target').value, line:document.getElementById('cm-line').value };
+  if(editCatIdx>=0) catalog[editCatIdx]=item; else catalog.push(item);
+  saveCatalogToStorage();
+  renderCatalog();
+  closeCatalogModal();
+  toast('✅ Đã lưu sản phẩm');
+}
+
+// Save catalog to firebase too
+async function syncCatalogFirebase(){
+  if(!window._fb?.ok) return;
+  try{ 
+    const setPromise = window._fb.set(window._fb.ref(window._fb.db,'oee_catalog'),catalog);
+    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000));
+    await Promise.race([setPromise, timeoutPromise]);
+  }catch(e){}
+}
+
+// ══ RENDER INPUT VIEW ═════════════════════════════════════════════════════
+
+function renderLineTabs(){
+  const el=document.getElementById('line-tabs');
+  el.innerHTML=Object.entries(LINES).map(([line,cfg])=>{
+    const runs=cfg.machines.reduce((n,m)=>n+getRuns(activeDate,m.id).length,0);
+    const isA=line===activeLine;
+    return `<div class="line-tab${isA?' active':''}"
+      style="${isA?`background:${cfg.bg};border-color:${cfg.color};color:${cfg.color}`:''}"
+      onclick="selectLine('${line}')">
+      <span style="width:8px;height:8px;border-radius:50%;background:${cfg.color};display:inline-block;flex-shrink:0"></span>
+      ${line}
+      <span class="pill" style="background:${cfg.color}25;color:${cfg.color}">${runs} run</span>
+    </div>`;
+  }).join('');
+  // fill count
+  const total=ALL_MACHINES.reduce((n,m)=>n+getRuns(activeDate,m.id).length,0);
+  document.getElementById('fill-count').textContent=`${total} run tổng cộng`;
+  document.getElementById('input-title').textContent=`Nhập liệu ca ngày ${activeDate}`;
+}
+
+function renderMachineForms(){
+  const cfg=LINES[activeLine];
+  document.getElementById('machine-forms').innerHTML=cfg.machines.map(m=>buildMachineHTML(m,activeLine)).join('');
+  cfg.machines.forEach(m=>bindMachineEvents(m.id, activeLine));
+}
+
+function buildMachineHTML(machine, line){
+  const cfg=LINES[line];
+  const runs=getRuns(activeDate,machine.id);
+  const conflicts=checkConflicts(runs);
+  const calc=avgCalcs(runs);
+  const color=oeeColor(calc.oee);
+  return `
+<div class="machine-panel" id="panel-${machine.id}">
+  <div class="machine-head" style="border-left-color:${cfg.color}" onclick="togglePanel('${machine.id}')">
+    <span style="width:8px;height:8px;border-radius:50%;background:${cfg.color};flex-shrink:0"></span>
+    <div class="name" style="color:${cfg.color}">${machine.name}</div>
+    <div class="machine-type" style="color:${cfg.color};border-color:${cfg.color}40;background:${cfg.color}15">${machine.type}</div>
+    <span style="font-size:11px;color:var(--muted);font-weight:600">${runs.length} run${conflicts.size?` · <span style="color:var(--red)">⚠ Overlap</span>`:''}
+    </span>
+    <div class="head-kpis">
+      <div class="head-kpi"><div class="val" style="color:${oeeColor(calc.avail)}">${calc.avail>0?pct(calc.avail):'—'}</div><div class="lbl">AVAIL</div></div>
+      <div class="head-kpi"><div class="val" style="color:${oeeColor(calc.perf)}">${calc.perf>0?pct(calc.perf):'—'}</div><div class="lbl">PERF</div></div>
+      <div class="head-kpi"><div class="val" style="color:${oeeColor(calc.qual)}">${calc.qual>0?pct(calc.qual):'—'}</div><div class="lbl">QUAL</div></div>
+      <div class="head-kpi"><div class="val" style="color:${color}">${calc.oee>0?pct(calc.oee):'—'}</div><div class="lbl">OEE</div></div>
+      <span style="color:var(--muted2);font-size:14px">▾</span>
+    </div>
+  </div>
+  <div id="body-${machine.id}">
+    <div class="run-list" id="runs-${machine.id}">
+      ${runs.map((r,i)=>buildRunHTML(r,i,machine.id,line,conflicts)).join('')}
+    </div>
+    <div style="padding:0 14px 14px">
+      <button class="add-run-btn" onclick="addRun('${machine.id}')">+ Thêm Run mới cho ${machine.name}</button>
+    </div>
+  </div>
+</div>`;
+}
+
+function buildRunHTML(r, idx, mid, line, conflicts){
+  const isConflict=conflicts&&conflicts.has(r.id);
+  const c=calcRunOEE(r);
+  const color=oeeColor(c.oee);
+  const gap=0; // gap is computed from actualCalc, set dynamically
+  const startLabel=`${r.startTime}${r.startNextDay?' +1':''}`;
+  const endLabel=`${r.endTime}${r.endNextDay?' +1':''}`;
+  const totalUnplan=(+r.stopBag||0)+(+r.stopMat||0)+(+r.stopSku||0)+(+r.stopMachine||0)+(+r.stopClean||0);
+  return `
+<div class="run-card" id="run-${r.id}">
+  <div class="run-head">
+    <div class="run-num" style="background:${LINES[line].color}">R${idx+1}</div>
+    <div style="flex:1">
+      <div style="font-weight:700;font-size:12px">${r.item||'(chưa chọn sản phẩm)'}</div>
+      <div style="font-size:10px;color:var(--muted);font-family:var(--mono)">${r.code||''}</div>
+    </div>
+    ${r.startTime&&r.endTime?`<div class="run-time-badge">${startLabel} → ${endLabel}</div>`:''}
+    ${isConflict?'<div class="run-conflict">⚠ Thời gian trùng!</div>':''}
+    <div style="display:flex;gap:6px;margin-left:auto">
+      <button class="btn btn-ghost btn-sm" onclick="duplicateRun('${mid}','${r.id}')">⊕ Copy</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteRun('${mid}','${r.id}')">✕ Xoá</button>
+    </div>
+  </div>
+  <div class="run-body">
+    <!-- PRODUCT -->
+    <div class="section-sep">SẢN PHẨM</div>
+    <div class="fg fg-4">
+      <div class="field"><label>Tên OP</label><input data-f="operator" value="${r.operator||''}" placeholder="Nguyễn Văn A"/></div>
+      <div class="field ac-wrap"><label>Mã hàng ★ (gõ để tìm)</label>
+        <input data-f="code" value="${r.code||''}" placeholder="1024533" class="highlight" autocomplete="off" oninput="showAC(this,'${mid}','${r.id}','code','${line}')"/>
+        <div class="ac-list" id="ac-code-${r.id}" style="display:none"></div>
+      </div>
+      <div class="field"><label>Tên hàng (tự điền từ mã)</label>
+        <input data-f="item" value="${r.item||''}" placeholder="Tự điền khi chọn mã hàng" readonly
+          style="background:var(--surface2);color:var(--muted);cursor:default;border-color:var(--border)"/>
+      </div>
+      <div class="field"><label>Net (G) — từ danh mục</label><input type="number" data-f="netG" value="${r.netG||''}" placeholder="—" readonly style="background:var(--surface2);color:var(--muted);cursor:default;border-color:var(--border)"/></div>
+    </div>
+
+    <!-- CAPA -->
+    <div class="section-sep">CAPA & SẢN LƯỢNG</div>
+    <div class="fg" style="grid-template-columns:1fr 1fr auto 1fr 1fr 1fr 1fr">
+      <div class="field"><label>Designed (ea/h) — từ danh mục</label><input type="number" data-f="designed" value="${r.designed||''}" placeholder="—" readonly style="background:var(--surface2);color:var(--muted);cursor:default;border-color:var(--border)"/></div>
+      <div class="field"><label>Target (ea/h) — từ danh mục</label><input type="number" data-f="target" value="${r.target||''}" placeholder="—" readonly style="background:var(--surface2);color:var(--muted);cursor:default;border-color:var(--border)"/></div>
+      <div class="field"><label>Gap (Actual vs Target)</label><div class="computed-field" id="gap-${r.id}">—</div></div>
+      <div class="field"><label>Actual (ea/h) — tự tính</label><div class="computed-field auto-label" id="actual-${r.id}" title="Actual = Passed ÷ Thời gian thực vận hành (h)">—</div></div>
+      <div class="field"><label>Passed ★</label><input type="number" data-f="passed" value="${r.passed||''}" placeholder="26195" class="highlight"/></div>
+      <div class="field"><label>Reject X-ray</label><input type="number" data-f="rejXray" value="${r.rejXray||''}" placeholder="0"/></div>
+      <div class="field"><label>Rejected</label><input type="number" data-f="rejected" value="${r.rejected||''}" placeholder="0"/></div>
+    </div>
+
+    <!-- TIME -->
+    <div class="section-sep">THỜI GIAN VẬN HÀNH</div>
+    <div class="fg" style="grid-template-columns:auto auto 1fr 1fr 1fr">
+      <div class="field">
+        <label>Giờ bắt đầu ★</label>
+        <div style="display:flex;align-items:center;gap:5px">
+          <input type="time" data-f="startTime" value="${r.startTime||''}" class="highlight" style="width:110px"/>
+          <label style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--muted);text-transform:none;letter-spacing:0">
+            <input type="checkbox" data-f="startNextDay" ${r.startNextDay?'checked':''} style="width:auto"/> +1 ngày
+          </label>
+        </div>
+      </div>
+      <div class="field">
+        <label>Giờ kết thúc ★</label>
+        <div style="display:flex;align-items:center;gap:5px">
+          <input type="time" data-f="endTime" value="${r.endTime||''}" class="highlight" style="width:110px"/>
+          <label style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--muted);text-transform:none;letter-spacing:0">
+            <input type="checkbox" data-f="endNextDay" ${r.endNextDay?'checked':''} style="width:auto"/> +1 ngày
+          </label>
+        </div>
+      </div>
+      <div class="field"><label>Op time (tổng)</label><div class="computed-field" id="optime-${r.id}" title="Tổng thời gian từ start đến end">${c.opMin>0?`${Math.floor(c.opMin/60)}h ${c.opMin%60}m`:'—'}</div></div>
+      <div class="field"><label>Op time KH (trừ dừng KH)</label><div class="computed-field" id="opplanned-${r.id}" title="Op time − Dừng có kế hoạch">${c.opPlanned>0?`${Math.floor(c.opPlanned/60)}h ${c.opPlanned%60}m`:'—'}</div></div>
+      <div class="field"><label>Thực vận hành</label><div class="computed-field auto-label" id="realop-${r.id}" title="Op time KH − Dừng ngoài KH">${c.realMin>0?`${Math.floor(c.realMin/60)}h ${c.realMin%60}m`:'—'}</div></div>
+    </div>
+
+    <!-- PLANNED STOPS -->
+    <div class="section-sep">DỪNG MÁY CÓ KẾ HOẠCH (phút)</div>
+    <div class="stop-group">
+      <div class="stop-group-title"><div class="color-dot" style="background:var(--stop-plan)"></div>Planned Stops</div>
+      <div class="fg fg-3">
+        <div class="field"><label>Họp / Meeting</label><input type="number" data-f="stopMeeting" value="${r.stopMeeting||'0'}" min="0"/></div>
+        <div class="field"><label>Vệ sinh định kỳ</label><input type="number" data-f="stopHygiene" value="${r.stopHygiene||'0'}" min="0"/></div>
+        <div class="field"><label>Giải lao / Break</label><input type="number" data-f="stopBreak" value="${r.stopBreak||'0'}" min="0"/></div>
+      </div>
+    </div>
+
+    <!-- UNPLANNED STOPS -->
+    <div class="section-sep">DỪNG MÁY NGOÀI KẾ HOẠCH (phút)</div>
+    <div class="stop-group">
+      <div class="stop-group-title"><div class="color-dot" style="background:var(--red)"></div>Unplanned Stops — Tổng: <b id="unplan-total-${r.id}">${totalUnplan}ph</b></div>
+      <div class="fg fg-5">
+        <div class="field"><label style="color:var(--stop-bag)">🎁 Thay bao bì</label><input type="number" data-f="stopBag" value="${r.stopBag||'0'}" min="0" style="border-color:#BAE6FD"/></div>
+        <div class="field"><label style="color:var(--stop-mat)">📦 Thiếu NL input</label><input type="number" data-f="stopMat" value="${r.stopMat||'0'}" min="0" style="border-color:#FDE68A"/></div>
+        <div class="field"><label style="color:var(--stop-sku)">🔄 Chuyển đổi SKU</label><input type="number" data-f="stopSku" value="${r.stopSku||'0'}" min="0" style="border-color:#DDD6FE"/></div>
+        <div class="field"><label style="color:var(--stop-break)">🔧 Hư máy</label><input type="number" data-f="stopMachine" value="${r.stopMachine||'0'}" min="0" style="border-color:#FECACA"/></div>
+        <div class="field"><label style="color:var(--stop-clean)">🧹 Vệ sinh/Chỉnh máy</label><input type="number" data-f="stopClean" value="${r.stopClean||'0'}" min="0" style="border-color:#FDE68A"/></div>
+      </div>
+    </div>
+
+    <div class="field"><label>Ghi chú / Lý do dừng</label><textarea data-f="reason" placeholder="Mô tả chi tiết nguyên nhân dừng máy...">${r.reason||''}</textarea></div>
+  </div>
+
+  <!-- OEE summary bar -->
+  <div class="run-oee-bar">
+    <div class="kpi-mini"><div class="v" style="color:${oeeColor(c.avail)}" id="av-${r.id}">${c.avail>0?pct(c.avail):'—'}</div><div class="l">AVAIL</div></div>
+    <div class="kpi-mini"><div class="v" style="color:${oeeColor(c.perf)}" id="pf-${r.id}">${c.perf>0?pct(c.perf):'—'}</div><div class="l">PERF</div></div>
+    <div class="kpi-mini"><div class="v" style="color:${oeeColor(c.qual)}" id="ql-${r.id}">${c.qual>0?pct(c.qual):'—'}</div><div class="l">QUAL</div></div>
+    <div style="height:28px;width:1px;background:var(--border);flex-shrink:0"></div>
+    <div class="oee-big" style="color:${color}" id="ob-${r.id}">${c.oee>0?pct(c.oee):'—'}</div>
+    <div style="font-size:9px;font-weight:700;color:var(--muted)">OEE</div>
+  </div>
+</div>`;
+}
+
+function bindMachineEvents(mid, line){
+  const cfg=LINES[line];
+  const runs=getRuns(activeDate,mid);
+  runs.forEach(r=>{
+    const card=document.getElementById(`run-${r.id}`);
+    if(!card) return;
+    card.querySelectorAll('[data-f]').forEach(inp=>{
+      const event=inp.type==='checkbox'?'change':'input';
+      inp.addEventListener(event,()=>{
+        const val=inp.type==='checkbox'?inp.checked:inp.value;
+        updateRunField(mid,r.id,inp.dataset.f,val);
+      });
+    });
+    // Initialize computed fields on first render
+    refreshRunUI(mid, r.id);
+  });
+}
+
+function updateRunField(mid, rid, field, value){
+  const data=getMachineData(activeDate,mid);
+  const run=data.runs.find(r=>r.id===rid);
+  if(!run) return;
+  run[field]=value;
+  setMachineData(activeDate,mid,data);
+  refreshRunUI(mid,rid);
+  refreshMachineHead(mid);
+}
+
+function refreshRunUI(mid, rid){
+  const data=getMachineData(activeDate,mid);
+  const run=data.runs.find(r=>r.id===rid);
+  if(!run) return;
+  const c=calcRunOEE(run);
+  const color=oeeColor(c.oee);
+  const gap=(+run.actual||0)-(+run.target||0);
+
+  const s=(id,val,col)=>{const e=document.getElementById(id);if(e){e.textContent=val;if(col)e.style.color=col;}};
+  s(`av-${rid}`,c.avail>0?pct(c.avail):'—',oeeColor(c.avail));
+  s(`pf-${rid}`,c.perf>0?pct(c.perf):'—',oeeColor(c.perf));
+  s(`ql-${rid}`,c.qual>0?pct(c.qual):'—',oeeColor(c.qual));
+  s(`ob-${rid}`,c.oee>0?pct(c.oee):'—',color);
+  s(`optime-${rid}`,c.opMin>0?`${Math.floor(c.opMin/60)}h ${c.opMin%60}m`:'—');
+  s(`opplanned-${rid}`,c.opPlanned>0?`${Math.floor(c.opPlanned/60)}h ${c.opPlanned%60}m`:'—');
+  s(`realop-${rid}`,c.realMin>0?`${Math.floor(c.realMin/60)}h ${c.realMin%60}m`:'—');
+
+  // Actual (ea/h) = passed / realMin(h) — auto computed
+  const actualEl=document.getElementById(`actual-${rid}`);
+  if(actualEl){
+    if(c.actualCalc>0){
+      actualEl.textContent=c.actualCalc.toFixed(0)+' ea/h';
+      actualEl.style.color='var(--accent)';
+    } else { actualEl.textContent='—'; actualEl.style.color=''; }
+  }
+
+  // Gap = actual ea/h vs target
+  const gEl=document.getElementById(`gap-${rid}`);
+  if(gEl){
+    if(c.actualCalc>0 && run.target){
+      const gap2=Math.round(c.actualCalc-(+run.target));
+      gEl.innerHTML=`<span class="${gap2>=0?'gap-pos':'gap-neg'}">${gap2>=0?'+':''}${gap2} ea/h</span>`;
+    } else { gEl.textContent='—'; }
+  }
+
+  const unplan=(+run.stopBag||0)+(+run.stopMat||0)+(+run.stopSku||0)+(+run.stopMachine||0)+(+run.stopClean||0);
+  s(`unplan-total-${rid}`,unplan+'ph');
+
+  // time badge
+  const timeEl=document.getElementById(`run-${rid}`)?.querySelector('.run-time-badge');
+  if(timeEl&&run.startTime&&run.endTime){
+    timeEl.textContent=`${run.startTime}${run.startNextDay?' +1':''} → ${run.endTime}${run.endNextDay?' +1':''}`;
+    timeEl.style.display='';
+  }
+
+  // conflict
+  const allRuns=data.runs;
+  const conflicts=checkConflicts(allRuns);
+  const cEl=document.getElementById(`run-${rid}`)?.querySelector('.run-conflict');
+  if(cEl) cEl.style.display=conflicts.has(rid)?'':'none';
+}
+
+function refreshMachineHead(mid){
+  const line=ALL_MACHINES.find(m=>m.id===mid)?.line;
+  if(!line) return;
+  const runs=getRuns(activeDate,mid);
+  const c=avgCalcs(runs);
+  const color=oeeColor(c.oee);
+  const setH=(id,val,col)=>{const e=document.getElementById(`panel-${mid}`)?.querySelectorAll('.head-kpi .val');if(!e)return;};
+  // Re-render just the head KPIs
+  const head=document.getElementById(`panel-${mid}`)?.querySelector('.head-kpis');
+  if(!head) return;
+  const kpis=head.querySelectorAll('.head-kpi .val');
+  if(kpis[0]){kpis[0].textContent=c.avail>0?pct(c.avail):'—';kpis[0].style.color=oeeColor(c.avail);}
+  if(kpis[1]){kpis[1].textContent=c.perf>0?pct(c.perf):'—';kpis[1].style.color=oeeColor(c.perf);}
+  if(kpis[2]){kpis[2].textContent=c.qual>0?pct(c.qual):'—';kpis[2].style.color=oeeColor(c.qual);}
+  if(kpis[3]){kpis[3].textContent=c.oee>0?pct(c.oee):'—';kpis[3].style.color=color;}
+  renderLineTabs();
+}
+
+// ── Run CRUD ───────────────────────────────────────────────────────────────
+function addRun(mid){
+  const line=ALL_MACHINES.find(m=>m.id===mid)?.line;
+  const data=getMachineData(activeDate,mid);
+  data.runs.push(newRun());
+  setMachineData(activeDate,mid,data);
+  rerenderMachine(mid,line);
+}
+function deleteRun(mid,rid){
+  const line=ALL_MACHINES.find(m=>m.id===mid)?.line;
+  const data=getMachineData(activeDate,mid);
+  data.runs=data.runs.filter(r=>r.id!==rid);
+  setMachineData(activeDate,mid,data);
+  rerenderMachine(mid,line);
+}
+function duplicateRun(mid,rid){
+  const line=ALL_MACHINES.find(m=>m.id===mid)?.line;
+  const data=getMachineData(activeDate,mid);
+  const orig=data.runs.find(r=>r.id===rid);
+  if(!orig) return;
+  const copy={...orig,id:uid()};
+  data.runs.push(copy);
+  setMachineData(activeDate,mid,data);
+  rerenderMachine(mid,line);
+  toast('⊕ Đã copy run');
+}
+function rerenderMachine(mid,line){
+  if(!line) line=ALL_MACHINES.find(m=>m.id===mid)?.line;
+  const machine=LINES[line]?.machines.find(m=>m.id===mid);
+  if(!machine) return;
+  const panel=document.getElementById(`panel-${mid}`);
+  if(!panel) return;
+  panel.outerHTML=buildMachineHTML(machine,line);
+  bindMachineEvents(mid,line);
+  renderLineTabs();
+}
+
+// ── Panel toggle ───────────────────────────────────────────────────────────
+function togglePanel(mid){
+  const b=document.getElementById(`body-${mid}`);
+  if(!b) return;
+  b.style.display=b.style.display==='none'?'':'none';
+}
+function collapseAll(){ ALL_MACHINES.forEach(m=>{ const b=document.getElementById(`body-${m.id}`); if(b) b.style.display='none'; }); }
+
+// ══ AUTOCOMPLETE ══════════════════════════════════════════════════════════
+function showAC(input,mid,rid,type,line){
+  const q=input.value.trim();
+  const listId=`ac-${type}-${rid}`;
+  const list=document.getElementById(listId);
+  if(!list) return;
+  if(!q){ list.style.display='none'; return; }
+  const results=catSearch(q,line);
+  if(!results.length){ list.style.display='none'; return; }
+  list.innerHTML=results.map(c=>`
+    <div class="ac-item" onclick="applyAC('${mid}','${rid}','${c.code}')">
+      <span class="ac-code">${c.code}</span>
+      <span class="ac-name">${c.name}</span>
+      <span style="font-size:10px;color:var(--muted)">${c.netG?c.netG+'g':''}</span>
+    </div>`).join('');
+  list.style.display='block';
+  // close on outside click
+  setTimeout(()=>{ document.addEventListener('click',()=>list.style.display='none',{once:true}); },0);
+}
+function applyAC(mid,rid,code){
+  const cat=catLookup(code);
+  if(!cat) return;
+  const data=getMachineData(activeDate,mid);
+  const run=data.runs.find(r=>r.id===rid);
+  if(!run) return;
+  // Fill from catalog
+  run.item=cat.name; run.code=cat.code;
+  if(cat.netG)    run.netG=cat.netG;
+  if(cat.designed) run.designed=cat.designed;
+  if(cat.target)   run.target=cat.target;
+  setMachineData(activeDate,mid,data);
+
+  // Update fields in DOM without full re-render
+  const card=document.getElementById(`run-${rid}`);
+  if(card){
+    const codeInp=card.querySelector('[data-f="code"]');
+    const itemInp=card.querySelector('[data-f="item"]');
+    const netInp =card.querySelector('[data-f="netG"]');
+    const desInp =card.querySelector('[data-f="designed"]');
+    const tgtInp =card.querySelector('[data-f="target"]');
+    if(codeInp) codeInp.value=cat.code;
+    if(itemInp) itemInp.value=cat.name;
+    if(netInp&&cat.netG)    netInp.value=cat.netG;
+    if(desInp&&cat.designed) desInp.value=cat.designed;
+    if(tgtInp&&cat.target)   tgtInp.value=cat.target;
+  }
+  // Close autocomplete
+  const acList=document.getElementById(`ac-code-${rid}`);
+  if(acList) acList.style.display='none';
+
+  refreshRunUI(mid,rid);
+  refreshMachineHead(mid);
+  toast(`✅ ${cat.name}`);
+}
+
+// ══ SAVE / LOAD ═══════════════════════════════════════════════════════════
+async function saveAll(){
+  const btn=document.getElementById('save-btn');
+  btn.disabled=true; btn.textContent='⏳ Đang lưu…';
+  const payload=store[activeDate]||{};
+  let ok=false;
+  if(window._fb?.ok){
+    try{
+      const setPromise = window._fb.set(window._fb.ref(window._fb.db,`oee/${activeDate}`),payload);
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Firebase timeout')), 4000));
+      await Promise.race([setPromise, timeoutPromise]);
+      await syncCatalogFirebase();
+      ok=true; toast('✅ Đã lưu lên Firebase!','#16A34A');
+    }catch(e){ console.error(e); }
+  }
+  if(!ok){
+    try{ localStorage.setItem(`oee_${activeDate}`,JSON.stringify(payload)); ok=true; }catch(e){}
+    toast(ok?'💾 Lưu local (mất kết nối Firebase)':'⚠ Lưu thất bại','#D97706');
+  }
+  btn.disabled=false; btn.innerHTML='💾 Lưu';
+}
+
+async function loadData(date){
+  if(window._fb?.ok){
+    try{
+      const getPromise = window._fb.get(window._fb.ref(window._fb.db,`oee/${date}`));
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Firebase timeout')), 3000));
+      const snap = await Promise.race([getPromise, timeoutPromise]);
+      if(snap.exists()){ store[date]=snap.val(); return; }
+    }catch(e){
+      console.warn("Firebase load failed or timed out:", e);
+    }
+  }
+  try{ const d=localStorage.getItem(`oee_${date}`); if(d) store[date]=JSON.parse(d); }catch(e){}
+}
+
+async function loadCatalogFirebase(){
+  if(!window._fb?.ok) return;
+  try{
+    const snap=await window._fb.get(window._fb.ref(window._fb.db,'oee_catalog'));
+    if(snap.exists()){ catalog=snap.val(); saveCatalogToStorage(); }
+  }catch(e){}
+}
+
+// ══ DASHBOARD ════════════════════════════════════════════════════════════
+
+function renderDashboard(){
+  document.getElementById('dash-sub').textContent=`Ca ngày ${activeDate} — ${ALL_MACHINES.length} máy`;
+
+  // collect all runs
+  const allRuns=[];
+  ALL_MACHINES.forEach(m=>{
+    const runs=getRuns(activeDate,m.id);
+    runs.forEach(r=>allRuns.push({...r,machineId:m.id,machineName:m.name,line:m.line}));
+  });
+
+  const filled=allRuns.filter(r=>r.actual);
+  const n=filled.length||1;
+
+  // machine-level averages
+  const machineCalcs=ALL_MACHINES.map(m=>({
+    ...m,
+    runs:getRuns(activeDate,m.id),
+    c:avgCalcs(getRuns(activeDate,m.id))
+  })).filter(m=>m.runs.length>0);
+
+  const avgOEE  =machineCalcs.reduce((s,m)=>s+m.c.oee,0)/(machineCalcs.length||1);
+  const avgAvail=machineCalcs.reduce((s,m)=>s+m.c.avail,0)/(machineCalcs.length||1);
+  const avgPerf =machineCalcs.reduce((s,m)=>s+m.c.perf,0)/(machineCalcs.length||1);
+  const avgQual =machineCalcs.reduce((s,m)=>s+m.c.qual,0)/(machineCalcs.length||1);
+
+  const totalPassed  =allRuns.reduce((s,r)=>s+(+r.passed||0),0);
+  const totalRejected=allRuns.reduce((s,r)=>s+(+r.rejected||0)+(+r.rejXray||0),0);
+  const totalUnplan  =allRuns.reduce((s,r)=>s+(+r.stopBag||0)+(+r.stopMat||0)+(+r.stopSku||0)+(+r.stopMachine||0)+(+r.stopClean||0),0);
+  const totalPlan    =allRuns.reduce((s,r)=>s+(+r.stopMeeting||0)+(+r.stopHygiene||0)+(+r.stopBreak||0),0);
+
+  // gauges
+  renderGauge('g-oee',  avgOEE,  oeeColor(avgOEE));
+  renderGauge('g-avail',avgAvail,oeeColor(avgAvail));
+  renderGauge('g-perf', avgPerf, oeeColor(avgPerf));
+  renderGauge('g-qual', avgQual, oeeColor(avgQual));
+
+  renderSparkline('sp-oee',  [13,15,18,20,avgOEE*0.9,avgOEE*0.95,avgOEE]);
+  renderSparkline('sp-avail',[85,88,90,87,avgAvail*0.98,avgAvail*0.99,avgAvail]);
+  renderSparkline('sp-perf', [20,22,25,18,avgPerf*0.92,avgPerf*0.96,avgPerf]);
+  renderSparkline('sp-qual', [94,95,96,95,avgQual*0.995,avgQual*0.998,avgQual]);
+
+  ['oee','avail','perf','qual'].forEach((k,i)=>{
+    const prev=[avgOEE,avgAvail,avgPerf,avgQual][i];
+    document.getElementById(`prev-${k}`).textContent=pct(prev*0.93);
+  });
+
+  document.getElementById('ok-passed').textContent  =totalPassed.toLocaleString();
+  document.getElementById('ok-rej').textContent     =totalRejected.toLocaleString();
+  document.getElementById('ok-unplan').textContent  =totalUnplan+'ph';
+  document.getElementById('ok-plan').textContent    =totalPlan+'ph';
+  document.getElementById('ok-machines').textContent=`${machineCalcs.length}/${ALL_MACHINES.length}`;
+
+  renderGantt(machineCalcs);
+  renderDetailTable(allRuns);
+}
+
+function renderGauge(id,value,color){
+  const el=document.getElementById(id);
+  if(!el) return;
+  const W=130,H=80,cx=65,cy=72,r=54;
+  const startA=Math.PI, range=Math.PI;
+  const pctAngle=startA+(value/100)*range;
+  const dash=(value/100)*(Math.PI*r);
+  let ticks='';
+  for(let i=0;i<=20;i++){
+    const a=Math.PI+(i/20)*Math.PI;
+    const r1=50,r2=i%5===0?43:46;
+    const x1=cx+r1*Math.cos(a),y1=cy+r1*Math.sin(a);
+    const x2=cx+r2*Math.cos(a),y2=cy+r2*Math.sin(a);
+    ticks+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${i/20*100>=value?'#E2E8F0':color}" stroke-width="${i%5===0?2:1}"/>`;
+  }
+  const nx=cx+46*Math.cos(pctAngle),ny=cy+46*Math.sin(pctAngle);
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="overflow:visible">
+    <path d="M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${cx+r} ${cy}" fill="none" stroke="#E2E8F0" stroke-width="9" stroke-linecap="round"/>
+    <path d="M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${cx+r} ${cy}" fill="none" stroke="${color}" stroke-width="9" stroke-linecap="round"
+      stroke-dasharray="${dash.toFixed(1)} 9999" style="transition:stroke-dasharray .6s"/>
+    ${ticks}
+    <line x1="${cx}" y1="${cy}" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="${cx}" cy="${cy}" r="4" fill="${color}"/>
+    <text x="${cx}" y="${cy-8}" text-anchor="middle" font-size="20" font-weight="900" fill="${color}" font-family="'JetBrains Mono',monospace">${value>0?value.toFixed(2):'—'}</text>
+    <text x="${cx}" y="${cy+4}" text-anchor="middle" font-size="9" fill="#64748B">%</text>
+  </svg>`;
+}
+
+function renderSparkline(id,data){
+  const el=document.getElementById(id); if(!el) return;
+  const W=200,H=32,n=data.length;
+  const mn=Math.min(...data)*0.9,mx=Math.max(...data)*1.05;
+  const px=i=>i/(n-1)*W, py=v=>H-(((v-mn)/(mx-mn||1))*H*0.8+H*0.1);
+  const pts=data.map((v,i)=>`${px(i).toFixed(1)},${py(v).toFixed(1)}`).join(' ');
+  const fill=`${pts} ${W},${H} 0,${H}`;
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:100%">
+    <defs><linearGradient id="sg${id}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2563EB" stop-opacity=".2"/><stop offset="100%" stop-color="#2563EB" stop-opacity="0"/>
+    </linearGradient></defs>
+    <polygon points="${fill}" fill="url(#sg${id})"/>
+    <polyline points="${pts}" fill="none" stroke="#2563EB" stroke-width="1.5" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+// Gantt
+function renderGantt(machineCalcs){
+  if(!machineCalcs.length){ document.getElementById('gantt-inner').innerHTML='<div class="empty-state"><div class="icon">📊</div>Nhập dữ liệu để xem Gantt chart</div>'; return; }
+
+  // Find global time range (shift: 7:00 to 7:00+1 = 420 to 1860 min)
+  const SHIFT_START=7*60; // 7:00 = 420 min
+  const SHIFT_END  =7*60+1440; // 7:00+1 = 1860 min
+
+  // collect all absolute mins
+  let minT=SHIFT_START, maxT=SHIFT_END;
+  machineCalcs.forEach(m=>m.runs.forEach(r=>{
+    const s=t2min(r.startTime,r.startNextDay||false);
+    const e=t2min(r.endTime,r.endNextDay||false);
+    if(s!==null) minT=Math.min(minT,s);
+    if(e!==null) maxT=Math.max(maxT,e);
+  }));
+  const rangeMin=maxT-minT||1;
+  document.getElementById('gantt-range').textContent=`${min2hm(minT)} → ${min2hm(maxT%1440)} (+1)`;
+
+  function toLeft(m){ return `${((m-minT)/rangeMin*100).toFixed(2)}%`; }
+  function toWidth(m){ return `${(m/rangeMin*100).toFixed(2)}%`; }
+
+  const STOP_COLORS={
+    stopBag:'#0891B2',stopMat:'#D97706',stopSku:'#7C3AED',
+    stopMachine:'#EF4444',stopClean:'#F59E0B'
+  };
+  const STOP_LABELS={stopBag:'Thay bao bì',stopMat:'Thiếu NL',stopSku:'Chuyển SKU',stopMachine:'Hư máy',stopClean:'Vệ sinh/Chỉnh'};
+
+  let html='';
+  machineCalcs.forEach(m=>{
+    const lineCfg=LINES[m.line];
+    html+=`<div class="gantt-row">
+      <div class="gantt-label" title="${m.name}">
+        <span style="color:${lineCfg.color};font-weight:700">${m.name}</span>
+        <br/><span style="font-size:9px">${m.line}</span>
+      </div>
+      <div class="gantt-track">`;
+
+    m.runs.forEach((r,ri)=>{
+      const s=t2min(r.startTime,r.startNextDay||false);
+      const e=t2min(r.endTime,r.endNextDay||false);
+      if(s===null||e===null||e<=s) return;
+
+      const planMin=(+r.stopMeeting||0)+(+r.stopHygiene||0)+(+r.stopBreak||0);
+      const unplanFields=['stopBag','stopMat','stopSku','stopMachine','stopClean'];
+      const unplanTotal=unplanFields.reduce((sum,f)=>sum+(+r[f]||0),0);
+      const runMin=e-s-planMin-unplanTotal;
+
+      // running bar
+      html+=`<div class="gantt-bar" style="left:${toLeft(s)};width:${toWidth(Math.max(0,runMin))};background:#22C55E;z-index:1" title="Running: ${r.item||'—'} ${min2hm(s)}→${min2hm(e)}">
+        ${r.item?`<span style="font-size:8px">${r.code||r.item}</span>`:''}
+      </div>`;
+
+      // planned stop
+      let cursor=s+Math.max(0,runMin);
+      if(planMin>0){
+        html+=`<div class="gantt-bar" style="left:${toLeft(cursor)};width:${toWidth(planMin)};background:var(--stop-plan);z-index:2" title="Dừng có KH: ${planMin}ph (Họp+VS+Giải lao)"></div>`;
+        cursor+=planMin;
+      }
+
+      // unplanned stops
+      unplanFields.forEach(f=>{
+        const m2=+r[f]||0;
+        if(m2>0){
+          html+=`<div class="gantt-bar" style="left:${toLeft(cursor)};width:${toWidth(m2)};background:${STOP_COLORS[f]};z-index:3" title="${STOP_LABELS[f]}: ${m2}ph"></div>`;
+          cursor+=m2;
+        }
+      });
+    });
+
+    html+=`</div></div>`;
+  });
+
+  // Axis ticks every hour
+  const tickCount=Math.ceil(rangeMin/60)+1;
+  let ticks='';
+  for(let i=0;i<tickCount;i++){
+    const m=minT+i*60;
+    if(m>maxT+30) break;
+    ticks+=`<div class="gantt-tick">${min2hm(m%1440)}</div>`;
+  }
+  html+=`<div class="gantt-axis">${ticks}</div>`;
+  document.getElementById('gantt-inner').innerHTML=html;
+}
+
+function renderDetailTable(allRuns){
+  const t=document.getElementById('detail-table');
+  if(!allRuns.length){ t.innerHTML='<tr><td colspan="15" class="empty-state">Chưa có dữ liệu</td></tr>'; return; }
+  t.innerHTML=`<thead><tr>
+    ${['Line','Máy','Run','Item','Code','Designed','Target','Actual','Gap','Passed','Rejected','Op Time','Avail','Perf','Qual','OEE','Dừng KH','Dừng Ngoài KH','Ghi chú'].map(h=>`<th>${h}</th>`).join('')}
+  </tr></thead><tbody>
+  ${allRuns.map((r,i)=>{
+    const cfg=LINES[r.line];
+    const c=calcRunOEE(r);
+    const gap=(+r.actual||0)-(+r.target||0);
+    const rej=(+r.rejected||0)+(+r.rejXray||0);
+    const plan=(+r.stopMeeting||0)+(+r.stopHygiene||0)+(+r.stopBreak||0);
+    const unplan=(+r.stopBag||0)+(+r.stopMat||0)+(+r.stopSku||0)+(+r.stopMachine||0)+(+r.stopClean||0);
+    return `<tr>
+      <td><span class="badge-line" style="background:${cfg.color}20;color:${cfg.color};border-color:${cfg.color}40">${r.line}</span></td>
+      <td style="font-weight:700;color:${cfg.color}">${r.machineName||''}</td>
+      <td class="num">#${i+1}</td>
+      <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)">${r.item||'—'}</td>
+      <td class="num">${r.code||'—'}</td>
+      <td class="num">${r.designed||'—'}</td>
+      <td class="num">${r.target||'—'}</td>
+      <td class="num" style="font-weight:700;color:var(--accent)">${c.actualCalc>0?c.actualCalc.toFixed(0)+' ea/h':'—'}</td>
+      <td class="num" style="font-weight:700;color:${(c.actualCalc-(+r.target||0))>=0?'#16A34A':'#DC2626'}">${c.actualCalc>0&&r.target?(c.actualCalc-(+r.target))>=0?'+':''+(Math.round(c.actualCalc-(+r.target)))+' ea/h':'—'}</td>
+      <td class="num">${r.passed?parseInt(r.passed).toLocaleString():'—'}</td>
+      <td class="num" style="color:#DC2626">${rej||'—'}</td>
+      <td class="num" style="color:#2563EB">${c.opMin>0?`${Math.floor(c.opMin/60)}h${c.opMin%60}m`:'—'}</td>
+      <td><span class="oee-chip" style="background:${oeeColor(c.avail)}18;color:${oeeColor(c.avail)}">${c.avail>0?pct(c.avail):'—'}</span></td>
+      <td><span class="oee-chip" style="background:${oeeColor(c.perf)}18;color:${oeeColor(c.perf)}">${c.perf>0?pct(c.perf):'—'}</span></td>
+      <td><span class="oee-chip" style="background:${oeeColor(c.qual)}18;color:${oeeColor(c.qual)}">${c.qual>0?pct(c.qual):'—'}</span></td>
+      <td><span class="oee-chip" style="background:${oeeColor(c.oee)}18;color:${oeeColor(c.oee)};font-size:13px;font-weight:900">${c.oee>0?pct(c.oee):'—'}</span></td>
+      <td class="num" style="color:var(--stop-plan)">${plan?plan+'ph':'—'}</td>
+      <td class="num" style="color:var(--red)">${unplan?unplan+'ph':'—'}</td>
+      <td style="color:var(--muted);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.reason||'—'}</td>
+    </tr>`;
+  }).join('')}
+  </tbody>`;
+}
+
+// ══ EXPORT ════════════════════════════════════════════════════════════════
+function exportExcel(){
+  if(typeof XLSX==='undefined'){ toast('⚠ SheetJS chưa tải, thử lại','#D97706'); return; }
+
+  const wb = XLSX.utils.book_new();
+
+  /* ══════════════════════════════════════════════════════════════════════
+     COLUMN MAP (0-indexed) — matches the image exactly
+     0  Date
+     1  Day
+     2  Line
+     3  Số thứ tự máy
+     4  Tên OP
+     5  Code
+     6  Item
+     7  NW (g)
+     -- Capa (ea/h) -------
+     8  Designed
+     9  Target
+     10 Actual
+     -- Gap ---------------
+     11 Gap (ea/h)
+     -- Product quantity --
+     12 Passed
+     13 Rejected by X ray
+     14 Rejected by CWer
+     15 %
+     -- Total Operation time --
+     16 Start (hh:mm:ss)
+     17 End (hh:mm:ss)
+     18 hours (hh:mm)
+     19 Other (hh:mm)
+     -- Stop time planned --
+     20 Hygiene (hh:mm)
+     21 Break (hh:mm)
+     -- Operation time planned --
+     22 hh:mm
+     -- Stop time unplanned --
+     23 Thay bao bì
+     24 Thiếu nguyên liệu
+     25 Chuyển SKU
+     26 Hư máy
+     27 Chỉnh máy
+     -- Real operation time --
+     28 hh:mm
+     29 Performance (P)  %
+     30 Availability (A) %
+     31 Quality (Q)      %
+     32 OEE              %
+     33 Note
+     TOTAL: 34 columns (A..AH)
+  ══════════════════════════════════════════════════════════════════════ */
+
+  const NCOLS = 34;
+  const colLetter = i => i < 26
+    ? String.fromCharCode(65+i)
+    : String.fromCharCode(64+Math.floor(i/26)) + String.fromCharCode(65+(i%26));
+
+  /* ── Helper: hh:mm string from fractional hours ── */
+  const fmtHHMM = h => {
+    if(!h && h!==0) return '';
+    const neg=h<0; h=Math.abs(h);
+    const hh=Math.floor(h), mm=Math.round((h-hh)*60);
+    return `${neg?'-':''}${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+  };
+
+  /* ── HEADER ROW 1: group labels (row index 0) ── */
+  const hdr1 = new Array(NCOLS).fill('');
+  hdr1[0]  = 'Date';
+  hdr1[1]  = 'Day';
+  hdr1[2]  = 'Line';
+  hdr1[3]  = 'Số thứ tự máy';
+  hdr1[4]  = 'Tên OP';
+  hdr1[5]  = 'Code';
+  hdr1[6]  = 'Item';
+  hdr1[7]  = 'NW (g)';
+  hdr1[8]  = 'Capa (ea/h)';   // merge 8-10
+  hdr1[11] = 'Gap (ea/h)';
+  hdr1[12] = 'Product quantity';  // merge 12-15
+  hdr1[16] = 'Total Operation time'; // merge 16-19
+  hdr1[20] = 'Stop time planned';    // merge 20-21
+  hdr1[22] = 'Operation\ntime planned'; // single
+  hdr1[23] = 'Stop time unplanned';  // merge 23-27
+  hdr1[28] = 'Real\noperation time'; // single
+  hdr1[29] = 'Performance\n(P)';
+  hdr1[30] = 'Availability\n(A)';
+  hdr1[31] = 'Quality\n(Q)';
+  hdr1[32] = 'OEE';
+  hdr1[33] = 'Note';
+
+  /* ── HEADER ROW 2: sub-labels (row index 1) ── */
+  const hdr2 = new Array(NCOLS).fill('');
+  hdr2[0]  = 'Date';
+  hdr2[1]  = 'Day';
+  hdr2[2]  = 'Line';
+  hdr2[3]  = 'Số thứ tự máy';
+  hdr2[4]  = 'Tên OP';
+  hdr2[5]  = 'Code';
+  hdr2[6]  = 'Item';
+  hdr2[7]  = 'NW (g)';
+  hdr2[8]  = 'Designed';
+  hdr2[9]  = 'Target';
+  hdr2[10] = 'Actual';
+  hdr2[11] = 'Gap (ea/h)';
+  hdr2[12] = 'Passed';
+  hdr2[13] = 'Rejected by X ray';
+  hdr2[14] = 'Rejected by CWer';
+  hdr2[15] = '%';
+  hdr2[16] = 'Start (hh:mm:ss)';
+  hdr2[17] = 'End (hh:mm:ss)';
+  hdr2[18] = 'hours (hh:mm)';
+  hdr2[19] = 'Other (hh:mm)';
+  hdr2[20] = 'Hygiene (hh:mm)';
+  hdr2[21] = 'Break (hh:mm)';
+  hdr2[22] = 'hh:mm';
+  hdr2[23] = 'Thay\nbao bì';
+  hdr2[24] = 'Thiếu\nnguyên liệu';
+  hdr2[25] = 'Chuyển\nSKU';
+  hdr2[26] = 'Hư\nmáy';
+  hdr2[27] = 'Chỉnh\nmáy';
+  hdr2[28] = 'hh:mm';
+  hdr2[29] = '%';
+  hdr2[30] = '%';
+  hdr2[31] = '%';
+  hdr2[32] = '%';
+  hdr2[33] = 'Note';
+
+  /* ── DATA ROWS ── */
+  const DAYS_VI = ['CN','T2','T3','T4','T5','T6','T7'];
+  const dateObj  = new Date(activeDate+'T00:00:00');
+  const dayStr   = DAYS_VI[dateObj.getDay()];
+
+  const dataRows = [];  // {excelRow (1-indexed), c, r, m}
+  const ws_data  = [hdr1, hdr2];
+  let rowIdx = 3; // Excel row number (1-indexed), data starts at row 3
+
+  ALL_MACHINES.forEach(m => {
+    const runs = getRuns(activeDate, m.id);
+    if(!runs.length) return;
+    runs.forEach((r) => {
+      const c        = calcRunOEE(r);
+      const rejX     = +r.rejXray  || 0;
+      const rejC     = +r.rejected || 0;
+      const rej      = rejX + rejC;
+      const passed   = +r.passed   || 0;
+      const totalOut = passed + rej;
+      const rejPct   = totalOut > 0 ? rej / totalOut : 0;
+
+      const planMin    = (+r.stopMeeting||0)+(+r.stopHygiene||0)+(+r.stopBreak||0);
+      const opPlanHH   = c.opPlanned / 60;
+      const realOpHH   = c.realMin   / 60;
+
+      const startDisp = r.startTime ? (r.startNextDay ? r.startTime+' +1' : r.startTime) : '';
+      const endDisp   = r.endTime   ? (r.endNextDay   ? r.endTime  +' +1' : r.endTime  ) : '';
+
+      const row = new Array(NCOLS).fill('');
+      row[0]  = activeDate;
+      row[1]  = dayStr;
+      row[2]  = m.line;
+      row[3]  = m.name;
+      row[4]  = r.operator || '';
+      row[5]  = r.code     || '';
+      row[6]  = r.item     || '';
+      row[7]  = r.netG     ? +r.netG     : '';
+      row[8]  = r.designed ? +r.designed : '';
+      row[9]  = r.target   ? +r.target   : '';
+      row[10] = c.actualCalc > 0 ? Math.round(c.actualCalc) : '';
+      row[11] = (c.actualCalc > 0 && r.target) ? Math.round(c.actualCalc - (+r.target)) : '';
+      row[12] = passed || '';
+      row[13] = rejX   || '';
+      row[14] = rejC   || '';
+      row[15] = totalOut > 0 ? rejPct : '';
+      row[16] = startDisp;
+      row[17] = endDisp;
+      row[18] = c.opMin > 0 ? fmtHHMM(c.opMin / 60) : '';
+      row[19] = '';   // Other — blank
+      row[20] = (+r.stopHygiene||0) > 0 ? fmtHHMM((+r.stopHygiene)/60) : '00:00';
+      row[21] = (+r.stopBreak  ||0) > 0 ? fmtHHMM((+r.stopBreak)  /60) : '00:00';
+      row[22] = opPlanHH > 0 ? fmtHHMM(opPlanHH) : '';
+      row[23] = (+r.stopBag    ||0) > 0 ? fmtHHMM((+r.stopBag)    /60) : '00:00';
+      row[24] = (+r.stopMat    ||0) > 0 ? fmtHHMM((+r.stopMat)    /60) : '00:00';
+      row[25] = (+r.stopSku    ||0) > 0 ? fmtHHMM((+r.stopSku)    /60) : '00:00';
+      row[26] = (+r.stopMachine||0) > 0 ? fmtHHMM((+r.stopMachine)/60) : '00:00';
+      row[27] = (+r.stopClean  ||0) > 0 ? fmtHHMM((+r.stopClean)  /60) : '00:00';
+      row[28] = realOpHH > 0 ? fmtHHMM(realOpHH) : '';
+      row[29] = c.perf  > 0 ? +(c.perf /100).toFixed(4) : '';
+      row[30] = c.avail > 0 ? +(c.avail/100).toFixed(4) : '';
+      row[31] = c.qual  > 0 ? +(c.qual /100).toFixed(4) : '';
+      row[32] = c.oee   > 0 ? +(c.oee  /100).toFixed(4) : '';
+      row[33] = r.reason || '';
+
+      ws_data.push(row);
+      dataRows.push({ excelRow: rowIdx, c, r, m });
+      rowIdx++;
+    });
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(ws_data);
+
+  /* ── COLUMN WIDTHS ── */
+  ws['!cols'] = [
+    {wch:12}, // Date
+    {wch:5},  // Day
+    {wch:16}, // Line
+    {wch:12}, // Số TT máy
+    {wch:14}, // Tên OP
+    {wch:9},  // Code
+    {wch:28}, // Item
+    {wch:7},  // NW(g)
+    {wch:9},  // Designed
+    {wch:9},  // Target
+    {wch:9},  // Actual
+    {wch:8},  // Gap
+    {wch:9},  // Passed
+    {wch:12}, // Rej X-ray
+    {wch:12}, // Rej CWer
+    {wch:6},  // %
+    {wch:10}, // Start
+    {wch:10}, // End
+    {wch:9},  // hours
+    {wch:9},  // Other
+    {wch:11}, // Hygiene
+    {wch:9},  // Break
+    {wch:9},  // Op planned
+    {wch:8},  // Thay bao bì
+    {wch:9},  // Thiếu NL
+    {wch:8},  // Chuyển SKU
+    {wch:7},  // Hư máy
+    {wch:8},  // Chỉnh máy
+    {wch:9},  // Real op
+    {wch:11}, // Perf %
+    {wch:11}, // Avail %
+    {wch:10}, // Qual %
+    {wch:10}, // OEE %
+    {wch:22}, // Note
+  ];
+
+  /* ── MERGES ── */
+  // Row index 0 = hdr1, row index 1 = hdr2
+  ws['!merges'] = [
+    // hdr1 single-cell labels that span both rows
+    {s:{r:0,c:0}, e:{r:1,c:0}},   // Date
+    {s:{r:0,c:1}, e:{r:1,c:1}},   // Day
+    {s:{r:0,c:2}, e:{r:1,c:2}},   // Line
+    {s:{r:0,c:3}, e:{r:1,c:3}},   // Số TT máy
+    {s:{r:0,c:4}, e:{r:1,c:4}},   // Tên OP
+    {s:{r:0,c:5}, e:{r:1,c:5}},   // Code
+    {s:{r:0,c:6}, e:{r:1,c:6}},   // Item
+    {s:{r:0,c:7}, e:{r:1,c:7}},   // NW(g)
+    // Capa (ea/h) spans cols 8-10
+    {s:{r:0,c:8}, e:{r:0,c:10}},
+    // Gap single col spans both rows
+    {s:{r:0,c:11},e:{r:1,c:11}},
+    // Product quantity spans 12-15
+    {s:{r:0,c:12},e:{r:0,c:15}},
+    // Total Operation time spans 16-19
+    {s:{r:0,c:16},e:{r:0,c:19}},
+    // Stop time planned spans 20-21
+    {s:{r:0,c:20},e:{r:0,c:21}},
+    // Operation time planned — single, spans both rows
+    {s:{r:0,c:22},e:{r:1,c:22}},
+    // Stop time unplanned spans 23-27
+    {s:{r:0,c:23},e:{r:0,c:27}},
+    // Real operation time — single, spans both rows
+    {s:{r:0,c:28},e:{r:1,c:28}},
+    // Performance, Availability, Quality, OEE, Note — single cols span both rows
+    {s:{r:0,c:29},e:{r:1,c:29}},
+    {s:{r:0,c:30},e:{r:1,c:30}},
+    {s:{r:0,c:31},e:{r:1,c:31}},
+    {s:{r:0,c:32},e:{r:1,c:32}},
+    {s:{r:0,c:33},e:{r:1,c:33}},
+  ];
+
+  /* ── STYLING ── */
+  const HDR_BG   = '1F3864';  // dark navy
+  const HDR_BG2  = '2F5496';  // medium navy for sub-header
+  const WHITE    = 'FFFFFF';
+  const BORDER_C = 'B8CCE4';
+
+  function sCell(addr, {bg, fg='000000', bold=false, sz=9, align='center', wrap=false, numFmt='', italic=false}={}){
+    if(!ws[addr]) ws[addr] = {t:'z', v:''};
+    ws[addr].s = {
+      font:      { name:'Calibri', sz, bold, italic, color:{rgb:fg} },
+      fill:      bg ? {patternType:'solid', fgColor:{rgb:bg}} : {patternType:'none'},
+      alignment: { horizontal:align, vertical:'center', wrapText:wrap },
+      border: {
+        top:   {style:'thin', color:{rgb:BORDER_C}},
+        bottom:{style:'thin', color:{rgb:BORDER_C}},
+        left:  {style:'thin', color:{rgb:BORDER_C}},
+        right: {style:'thin', color:{rgb:BORDER_C}},
+      },
+      numFmt,
+    };
+  }
+
+  // Style header row 1 (index 0 → Excel row 1)
+  for(let ci=0; ci<NCOLS; ci++){
+    sCell(colLetter(ci)+'1', {bg:HDR_BG, fg:WHITE, bold:true, sz:9, wrap:true});
+  }
+  // Style header row 2 (index 1 → Excel row 2)
+  for(let ci=0; ci<NCOLS; ci++){
+    sCell(colLetter(ci)+'2', {bg:HDR_BG2, fg:WHITE, bold:true, sz:8, wrap:true});
+  }
+
+  // Style data rows
+  for(let dr=0; dr<dataRows.length; dr++){
+    const {excelRow:er, c, r} = dataRows[dr];
+    const rowBG = dr%2===0 ? 'FFFFFF' : 'DCE6F1';
+
+    for(let ci=0; ci<NCOLS; ci++){
+      const addr = colLetter(ci)+er;
+      let bg=rowBG, fg='000000', numFmt='', align='center', bold=false;
+
+      // Numbers right-aligned
+      if([7,8,9,10,11,12,13,14].includes(ci)){ align='right'; numFmt='#,##0'; }
+      // % columns with conditional color
+      if([15,29,30,31,32].includes(ci)){
+        numFmt = '0.00%';
+        const val = ws[addr]?.v;
+        if(typeof val==='number' && val>0){
+          if([29,30,31,32].includes(ci)){
+            // OEE/Perf/Avail/Qual color coding
+            bg  = val>=0.85 ? 'C6EFCE' : val>=0.70 ? 'FFEB9C' : 'FFC7CE';
+            fg  = val>=0.85 ? '276221' : val>=0.70 ? '9C5700' : '9C0006';
+            bold= true;
+          }
+        }
+      }
+      // Date left-aligned
+      if(ci===0){ align='left'; }
+      // Item left-aligned
+      if(ci===6){ align='left'; }
+      // Note left-aligned
+      if(ci===33){ align='left'; }
+
+      sCell(addr, {bg, fg, sz:9, align, numFmt, bold});
+    }
+  }
+
+  /* ── ROW HEIGHTS ── */
+  ws['!rows'] = [
+    {hpt:30},  // header row 1
+    {hpt:36},  // header row 2 (taller for sub-labels)
+  ];
+
+  XLSX.utils.book_append_sheet(wb, ws, 'OEE Report');
+
+  /* ── SUMMARY SHEET ── */
+  const sumData = [
+    ['OEE SUMMARY — ' + activeDate],
+    [],
+    ['Line','Máy','Runs','Op time (h)','Op planned (h)','Real op (h)',
+     'Passed','Rejected','Actual (ea/h)',
+     'Performance %','Availability %','Quality %','OEE %']
+  ];
+  ALL_MACHINES.forEach(m => {
+    const runs = getRuns(activeDate, m.id);
+    if(!runs.length) return;
+    const c2 = avgCalcs(runs);
+    const totPassed = runs.reduce((s,r2)=>s+(+r2.passed||0), 0);
+    const totRej    = runs.reduce((s,r2)=>s+(+r2.rejected||0)+(+r2.rejXray||0), 0);
+    const actualAvg = c2.realMin>0 ? totPassed/(c2.realMin/60) : 0;
+    sumData.push([
+      m.line, m.name, runs.length,
+      +(c2.opMin/60).toFixed(2),
+      +(c2.opPlanned/60).toFixed(2),
+      +(c2.realMin/60).toFixed(2),
+      totPassed, totRej,
+      actualAvg>0 ? Math.round(actualAvg) : '',
+      c2.perf  > 0 ? +(c2.perf /100).toFixed(4) : '',
+      c2.avail > 0 ? +(c2.avail/100).toFixed(4) : '',
+      c2.qual  > 0 ? +(c2.qual /100).toFixed(4) : '',
+      c2.oee   > 0 ? +(c2.oee  /100).toFixed(4) : '',
+    ]);
+  });
+  const ws2 = XLSX.utils.aoa_to_sheet(sumData);
+  ws2['!cols'] = [
+    {wch:18},{wch:14},{wch:6},{wch:11},{wch:13},{wch:11},
+    {wch:10},{wch:10},{wch:13},
+    {wch:14},{wch:14},{wch:12},{wch:10}
+  ];
+  // Style summary header
+  for(let ci=0;ci<13;ci++){
+    const addr=colLetter(ci)+'3';
+    if(!ws2[addr]) ws2[addr]={t:'z',v:''};
+    ws2[addr].s={font:{name:'Calibri',sz:9,bold:true,color:{rgb:'FFFFFF'}},fill:{patternType:'solid',fgColor:{rgb:'1F3864'}},alignment:{horizontal:'center',vertical:'center'}};
+  }
+  // Format % cols in summary
+  ['J','K','L','M'].forEach(col=>{
+    for(let ri=4; ri<=sumData.length; ri++){
+      const addr=col+ri;
+      if(ws2[addr]&&typeof ws2[addr].v==='number'){
+        ws2[addr].s={numFmt:'0.00%',alignment:{horizontal:'center'}};
+      }
+    }
+  });
+  XLSX.utils.book_append_sheet(wb, ws2, 'Summary');
+
+  XLSX.writeFile(wb, `OEE_Report_${activeDate}.xlsx`);
+  toast('✅ Xuất Excel thành công!', '#16A34A');
+}
+
+const exportCSV = exportExcel;
+
+// ══ NAV ═══════════════════════════════════════════════════════════════════
+function switchView(v){
+  currentView=v;
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.getElementById(`view-${v}`).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['input','dashboard','catalog'][i]===v));
+  if(v==='dashboard') renderDashboard();
+  if(v==='catalog') renderCatalog();
+}
+
+function selectLine(line){
+  activeLine=line;
+  renderLineTabs();
+  renderMachineForms();
+}
+
+// ══ TOAST ════════════════════════════════════════════════════════════════
+function toast(msg,color='#1E293B'){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.style.background=color; el.style.display='flex';
+  clearTimeout(el._t); el._t=setTimeout(()=>el.style.display='none',3000);
+}
+
+// ══ INIT ═════════════════════════════════════════════════════════════════
+async function init(){
+  // Date picker
+  const dp=document.getElementById('date-pick');
+  dp.value=activeDate;
+  dp.addEventListener('change',async e=>{
+    activeDate=e.target.value;
+    const d=new Date(activeDate+'T07:00:00');
+    const next=new Date(d); next.setDate(next.getDate()+1);
+    document.getElementById('shift-label').textContent=`${activeDate} 7:00 → ${next.toLocaleDateString('vi-VN')} 7:00`;
+    await loadData(activeDate);
+    if(currentView==='input'){ renderLineTabs(); renderMachineForms(); }
+    else if(currentView==='dashboard') renderDashboard();
+  });
+  // set shift label
+  const d=new Date(activeDate+'T07:00:00');
+  const next=new Date(d); next.setDate(next.getDate()+1);
+  document.getElementById('shift-label').textContent=`${activeDate} 7:00 → ${next.toLocaleDateString('vi-VN')} 7:00`;
+
+  loadCatalogFromStorage();
+  setTimeout(loadCatalogFirebase, 800);
+  await loadData(activeDate);
+  renderLineTabs();
+  renderMachineForms();
+}
+
+// Wait for firebase module then init
+setTimeout(init, 600);
+</script>
+</body>
+</html>
