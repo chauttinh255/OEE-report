@@ -32,8 +32,17 @@ async function initFb() {
     // Connectivity probe to ensure DB is actually reachable
     const probeRef = ref(db, '__probe__');
     const p = new Promise(r => setTimeout(() => r('timeout'), 3000));
-    const res = await Promise.race([set(probeRef, {ts: Date.now()}), p]);
-    if(res !== 'timeout') window._fb.ok = true;
+    try {
+      const res = await Promise.race([set(probeRef, {ts: Date.now()}), p]);
+      if(res !== 'timeout') window._fb.ok = true;
+    } catch(err) {
+      // A permission_denied error means we successfully connected to the server but lacked write access
+      if(err.message && err.message.includes('permission_denied')) {
+        window._fb.ok = true;
+      } else {
+        throw err;
+      }
+    }
   } catch(e) {
     window._fb = { ok: false, error: e };
   }
