@@ -12,7 +12,18 @@
 import { initializeApp }          from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-let firebaseConfig = null;
+let firebaseConfig = {
+  apiKey: "AIzaSyArEMVdVu5TcdJJ7trsHr-f7d66PtJ3Ddo",
+  authDomain: "oee-report-7d55a.firebaseapp.com",
+  // Lưu ý: Nếu database của bạn ở vùng US (us-central1), link này sẽ là: "https://oee-report-7d55a.firebaseio.com"
+  databaseURL: "https://oee-report-7d55a-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "oee-report-7d55a",
+  storageBucket: "oee-report-7d55a.firebasestorage.app",
+  messagingSenderId: "754171773917",
+  appId: "1:754171773917:web:2b13f13ef1752ac360ec34"
+};
+
+// Vẫn cho phép ghi đè cấu hình qua localStorage (nếu có ai đó muốn test DB khác)
 try {
   const stored = localStorage.getItem('fb_config');
   if(stored) firebaseConfig = JSON.parse(stored);
@@ -37,13 +48,14 @@ async function initFb() {
       if(res !== 'timeout') window._fb.ok = true;
     } catch(err) {
       // A permission_denied error means we successfully connected to the server but lacked write access
-      if(err.message && err.message.includes('permission_denied')) {
+      if(err.message && err.message.toLowerCase().includes('permission_denied')) {
         window._fb.ok = true;
       } else {
         throw err;
       }
     }
   } catch(e) {
+    console.error("Firebase init error:", e);
     window._fb = { ok: false, error: e };
   }
   window.dispatchEvent(new CustomEvent('fb-ready'));
