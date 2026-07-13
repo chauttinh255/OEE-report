@@ -405,6 +405,13 @@ table.ct tr:hover td{background:var(--surface2)}
 }
 .gantt-tick{flex:1;text-align:center}
 
+/* OP Chart */
+.op-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 12px; }
+.op-name { width: 130px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+.op-bar-bg { flex: 1; height: 22px; background: var(--surface2); border-radius: 6px; position: relative; border: 1px solid var(--border); overflow: hidden; }
+.op-bar-fill { height: 100%; display: flex; align-items: center; padding-left: 8px; font-weight: 800; color: #fff; font-size: 11px; }
+.op-stats { width: 150px; text-align: right; font-family: var(--mono); color: var(--muted); font-size: 10px; letter-spacing: -0.3px; }
+
 /* detail table */
 .detail-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
 .detail-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border)}
@@ -567,6 +574,14 @@ table.dt tr:hover td{background:var(--surface2)}
       <div class="ok-row"><div class="dot amber"></div><div class="ok-name">Unplanned stops</div><div class="ok-val" id="ok-unplan">—</div></div>
       <div class="ok-row"><div class="dot" style="background:var(--stop-plan)"></div><div class="ok-name">Planned stops</div><div class="ok-val" id="ok-plan">—</div></div>
       <div class="ok-row"><div class="dot" style="background:#2563EB"></div><div class="ok-name">Machines reported</div><div class="ok-val" id="ok-machines">—</div></div>
+    </div>
+  </div>
+
+  <!-- OP Comparison Chart -->
+  <div class="gantt-section" style="margin-bottom: 16px;">
+    <div class="gantt-title">👥 Thống kê theo Operator</div>
+    <div id="op-chart-container" style="padding: 4px 0 10px;">
+      <!-- CSS Bar chart will go here -->
     </div>
   </div>
 
@@ -1442,6 +1457,39 @@ function renderDashboard(){
   document.getElementById('ok-unplan').textContent  =totalUnplan+'ph';
   document.getElementById('ok-plan').textContent    =totalPlan+'ph';
   document.getElementById('ok-machines').textContent=`${machineCalcs.length}/${ALL_MACHINES.length}`;
+
+  document.getElementById('ok-machines').textContent=`${machineCalcs.length}/${ALL_MACHINES.length}`;
+
+  // Render OP Chart
+  const opGroups = {};
+  allRuns.forEach(r => {
+    const op = (r.operator || 'Chưa rõ').trim();
+    if(!opGroups[op]) opGroups[op] = [];
+    opGroups[op].push(r);
+  });
+  
+  const opStats = Object.keys(opGroups).map(op => {
+    const runs = opGroups[op];
+    const c = avgCalcs(runs);
+    return { op, c, runCount: runs.length };
+  }).filter(x => x.c.oee > 0 || x.runCount > 0);
+  
+  opStats.sort((a,b) => b.c.oee - a.c.oee); // Sort by OEE descending
+  
+  const opHTML = opStats.map(s => `
+    <div class="op-row">
+      <div class="op-name" title="${s.op}">${s.op} <span style="font-weight:400;color:var(--muted)">(${s.runCount} r)</span></div>
+      <div class="op-bar-bg">
+        <div class="op-bar-fill" style="width: ${s.c.oee}%; background: ${oeeColor(s.c.oee)}">${pct(s.c.oee)}</div>
+      </div>
+      <div class="op-stats">
+        A:${pct(s.c.avail)} P:${pct(s.c.perf)} Q:${pct(s.c.qual)}
+      </div>
+    </div>
+  `).join('');
+  
+  const chartContainer = document.getElementById('op-chart-container');
+  if(chartContainer) chartContainer.innerHTML = opStats.length ? opHTML : '<div class="empty-state">Chưa có dữ liệu</div>';
 
   renderGantt(machineCalcs);
   renderDetailTable(allRuns);
