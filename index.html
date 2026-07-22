@@ -405,19 +405,20 @@ table.ct tr:hover td{background:var(--surface2)}
 }
 .gantt-tick{flex:1;text-align:center}
 
-/* OP Chart */
-.op-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 12px; }
-.op-name { width: 130px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
-.op-bar-bg { flex: 1; height: 22px; background: var(--surface2); border-radius: 6px; position: relative; border: 1px solid var(--border); overflow: hidden; }
-.op-bar-fill { height: 100%; display: flex; align-items: center; padding-left: 8px; font-weight: 800; color: #fff; font-size: 11px; }
-.op-stats { width: 150px; text-align: right; font-family: var(--mono); color: var(--muted); font-size: 10px; letter-spacing: -0.3px; }
+/* OP Chart & Machine Time Chart */
+.op-row, .mach-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-bottom: 12px; font-size: 12px; }
+.op-name, .mach-name { flex: 1 1 40%; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+.op-stats, .mach-stats { flex: 1 1 40%; text-align: right; font-family: var(--mono); color: var(--muted); font-size: 10px; letter-spacing: -0.3px; }
+.op-bar-bg, .mach-bar-bg { flex: 1 1 100%; order: 3; height: 22px; background: var(--surface2); border-radius: 6px; position: relative; border: 1px solid var(--border); overflow: hidden; display: flex; }
+.op-bar-fill, .mach-bar-seg { height: 100%; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #fff; font-size: 10px; overflow: hidden; white-space: nowrap; }
+.op-bar-fill { justify-content: flex-start; padding-left: 8px; font-size: 11px; }
 
-/* Machine Time Chart */
-.mach-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 12px; }
-.mach-name { width: 130px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
-.mach-bar-bg { flex: 1; height: 22px; background: var(--surface2); border-radius: 6px; position: relative; border: 1px solid var(--border); overflow: hidden; display: flex; }
-.mach-bar-seg { height: 100%; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #fff; font-size: 10px; overflow: hidden; white-space: nowrap; }
-.mach-stats { width: 150px; text-align: right; font-family: var(--mono); color: var(--muted); font-size: 10px; letter-spacing: -0.3px; }
+@media (min-width: 800px) {
+  .op-row, .mach-row { flex-wrap: nowrap; margin-bottom: 8px; }
+  .op-name, .mach-name { flex: 0 0 170px; order: 1; }
+  .op-bar-bg, .mach-bar-bg { flex: 1; order: 2; }
+  .op-stats, .mach-stats { flex: 0 0 190px; order: 3; }
+}
 
 /* detail table */
 .detail-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
@@ -1474,27 +1475,26 @@ function renderDashboard(){
   document.getElementById('ok-plan').textContent    =totalPlan+'ph';
   document.getElementById('ok-machines').textContent=`${machineCalcs.length}/${ALL_MACHINES.length}`;
 
-  document.getElementById('ok-machines').textContent=`${machineCalcs.length}/${ALL_MACHINES.length}`;
-
-  // Render OP Chart
   const opGroups = {};
   allRuns.forEach(r => {
     const op = (r.operator || 'Chưa rõ').trim();
-    if(!opGroups[op]) opGroups[op] = [];
-    opGroups[op].push(r);
+    if(!opGroups[op]) opGroups[op] = { runs: [], lines: new Set() };
+    opGroups[op].runs.push(r);
+    if(r.line) opGroups[op].lines.add(r.line);
   });
   
   const opStats = Object.keys(opGroups).map(op => {
-    const runs = opGroups[op];
+    const runs = opGroups[op].runs;
     const c = avgCalcs(runs);
-    return { op, c, runCount: runs.length };
+    const lineStr = Array.from(opGroups[op].lines).join(', ');
+    return { op, c, runCount: runs.length, lineStr };
   }).filter(x => x.c.oee > 0 || x.runCount > 0);
   
   opStats.sort((a,b) => b.c.oee - a.c.oee); // Sort by OEE descending
   
   const opHTML = opStats.map(s => `
     <div class="op-row">
-      <div class="op-name" title="${s.op}">${s.op} <span style="font-weight:400;color:var(--muted)">(${s.runCount} r)</span></div>
+      <div class="op-name" title="${s.op} - ${s.lineStr}">${s.op} <span style="font-weight:400;color:var(--muted);font-size:10px">— ${s.lineStr}</span></div>
       <div class="op-bar-bg">
         <div class="op-bar-fill" style="width: ${s.c.oee}%; background: ${oeeColor(s.c.oee)}">${pct(s.c.oee)}</div>
       </div>
@@ -1522,7 +1522,7 @@ function renderDashboard(){
     const pUnplan = (m.c.unplanMin / tot) * 100;
     return `
     <div class="mach-row">
-      <div class="mach-name" title="${m.name}">${m.name}</div>
+      <div class="mach-name" title="${m.name} - ${m.line}">${m.name} <span style="font-weight:400;color:var(--muted);font-size:10px">— ${m.line}</span></div>
       <div class="mach-bar-bg">
         ${pReal>0 ? `<div class="mach-bar-seg" style="width: ${pReal}%; background: #22C55E;" title="Chạy thực tế: ${m.c.realMin}ph">${pReal>5?pReal.toFixed(1)+'%':''}</div>` : ''}
         ${pPlan>0 ? `<div class="mach-bar-seg" style="width: ${pPlan}%; background: var(--stop-plan);" title="Dừng có kế hoạch: ${m.c.planMin}ph">${pPlan>5?pPlan.toFixed(1)+'%':''}</div>` : ''}
