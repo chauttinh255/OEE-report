@@ -412,6 +412,13 @@ table.ct tr:hover td{background:var(--surface2)}
 .op-bar-fill { height: 100%; display: flex; align-items: center; padding-left: 8px; font-weight: 800; color: #fff; font-size: 11px; }
 .op-stats { width: 150px; text-align: right; font-family: var(--mono); color: var(--muted); font-size: 10px; letter-spacing: -0.3px; }
 
+/* Machine Time Chart */
+.mach-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 12px; }
+.mach-name { width: 130px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+.mach-bar-bg { flex: 1; height: 22px; background: var(--surface2); border-radius: 6px; position: relative; border: 1px solid var(--border); overflow: hidden; display: flex; }
+.mach-bar-seg { height: 100%; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #fff; font-size: 10px; overflow: hidden; white-space: nowrap; }
+.mach-stats { width: 150px; text-align: right; font-family: var(--mono); color: var(--muted); font-size: 10px; letter-spacing: -0.3px; }
+
 /* detail table */
 .detail-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
 .detail-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border)}
@@ -581,6 +588,14 @@ table.dt tr:hover td{background:var(--surface2)}
   <div class="gantt-section" style="margin-bottom: 16px;">
     <div class="gantt-title">👥 Thống kê theo Operator</div>
     <div id="op-chart-container" style="padding: 4px 0 10px;">
+      <!-- CSS Bar chart will go here -->
+    </div>
+  </div>
+
+  <!-- Machine Time Analysis -->
+  <div class="gantt-section" style="margin-bottom: 16px;">
+    <div class="gantt-title">⏱ Phân bổ Thời gian (Machine Time Analysis)</div>
+    <div id="mach-time-container" style="padding: 4px 0 10px;">
       <!-- CSS Bar chart will go here -->
     </div>
   </div>
@@ -787,11 +802,12 @@ function calcRunOEE(r){
 
 // Weighted average OEE across runs
 function avgCalcs(runs){
-  if(!runs||!runs.length) return {avail:0,perf:0,qual:0,oee:0,opMin:0,opPlanned:0,realMin:0};
-  let totOp=0,totOpPlanned=0,totReal=0,totPassed=0,totOut=0,sumAvail=0,sumPerf=0;
+  if(!runs||!runs.length) return {avail:0,perf:0,qual:0,oee:0,opMin:0,planMin:0,unplanMin:0,opPlanned:0,realMin:0};
+  let totOp=0,totPlan=0,totUnplan=0,totOpPlanned=0,totReal=0,totPassed=0,totOut=0,sumAvail=0,sumPerf=0;
   runs.forEach(r=>{
     const c=calcRunOEE(r);
-    totOp+=c.opMin; totOpPlanned+=c.opPlanned; totReal+=c.realMin;
+    totOp+=c.opMin; totPlan+=c.planMin; totUnplan+=c.unplanMin;
+    totOpPlanned+=c.opPlanned; totReal+=c.realMin;
     // weight by opPlanned for avail, by realMin for perf
     sumAvail+=c.avail*c.opPlanned;
     sumPerf +=c.perf *c.realMin;
@@ -800,7 +816,7 @@ function avgCalcs(runs){
   const avail=totOpPlanned>0?sumAvail/totOpPlanned:0;
   const perf =totReal>0?sumPerf/totReal:0;
   const qual =totOut>0?(totPassed/totOut)*100:0;
-  return {avail,perf,qual,oee:(avail*perf*qual)/1e4,opMin:totOp,opPlanned:totOpPlanned,realMin:totReal};
+  return {avail,perf,qual,oee:(avail*perf*qual)/1e4,opMin:totOp,planMin:totPlan,unplanMin:totUnplan,opPlanned:totOpPlanned,realMin:totReal};
 }
 
 // ── Data accessors ─────────────────────────────────────────────────────────
@@ -1490,6 +1506,35 @@ function renderDashboard(){
   
   const chartContainer = document.getElementById('op-chart-container');
   if(chartContainer) chartContainer.innerHTML = opStats.length ? opHTML : '<div class="empty-state">Chưa có dữ liệu</div>';
+
+  // Render Machine Time Chart
+  const machStats = [...machineCalcs];
+  machStats.sort((a,b) => {
+    const pA = a.c.opMin>0 ? a.c.unplanMin/a.c.opMin : 0;
+    const pB = b.c.opMin>0 ? b.c.unplanMin/b.c.opMin : 0;
+    return pB - pA;
+  });
+  
+  const machHTML = machStats.map(m => {
+    const tot = m.c.opMin || 1;
+    const pReal = (m.c.realMin / tot) * 100;
+    const pPlan = (m.c.planMin / tot) * 100;
+    const pUnplan = (m.c.unplanMin / tot) * 100;
+    return `
+    <div class="mach-row">
+      <div class="mach-name" title="${m.name}">${m.name}</div>
+      <div class="mach-bar-bg">
+        ${pReal>0 ? `<div class="mach-bar-seg" style="width: ${pReal}%; background: #22C55E;" title="Chạy thực tế: ${m.c.realMin}ph">${pReal>5?pReal.toFixed(1)+'%':''}</div>` : ''}
+        ${pPlan>0 ? `<div class="mach-bar-seg" style="width: ${pPlan}%; background: var(--stop-plan);" title="Dừng có kế hoạch: ${m.c.planMin}ph">${pPlan>5?pPlan.toFixed(1)+'%':''}</div>` : ''}
+        ${pUnplan>0 ? `<div class="mach-bar-seg" style="width: ${pUnplan}%; background: var(--stop-break);" title="Dừng sự cố: ${m.c.unplanMin}ph">${pUnplan>5?pUnplan.toFixed(1)+'%':''}</div>` : ''}
+      </div>
+      <div class="mach-stats">
+        T: ${m.c.opMin}ph | KH: ${m.c.planMin} | NKH: ${m.c.unplanMin}
+      </div>
+    </div>`;
+  }).join('');
+  const machContainer = document.getElementById('mach-time-container');
+  if(machContainer) machContainer.innerHTML = machStats.length ? machHTML : '<div class="empty-state">Chưa có dữ liệu</div>';
 
   renderGantt(machineCalcs);
   renderDetailTable(allRuns);
