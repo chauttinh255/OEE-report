@@ -95,7 +95,7 @@ initFb();
   --stop-mat:    #D97706;   /* thiếu NL */
   --stop-sku:    #7C3AED;   /* chuyển đổi SKU */
   --stop-break:  #EF4444;   /* hư máy */
-  --stop-clean:  #F59E0B;   /* vệ sinh chỉnh máy */
+  --stop-clean:  #F59E0B;   /* chỉnh sửa máy */
 
   --font: 'Inter', system-ui, sans-serif;
   --mono: 'JetBrains Mono', monospace;
@@ -598,7 +598,7 @@ table.dt tr:hover td{background:var(--surface2)}
       <div class="legend-item"><div class="legend-dot" style="background:var(--stop-mat)"></div>Thiếu NL</div>
       <div class="legend-item"><div class="legend-dot" style="background:var(--stop-sku)"></div>Chuyển đổi SKU</div>
       <div class="legend-item"><div class="legend-dot" style="background:var(--stop-break)"></div>Hư máy</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--stop-clean)"></div>Vệ sinh/Chỉnh máy</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--stop-clean)"></div>Chỉnh sửa máy</div>
     </div>
     <div class="gantt-scroll"><div class="gantt-inner" id="gantt-inner"></div></div>
   </div>
@@ -1112,7 +1112,7 @@ function buildRunHTML(r, idx, mid, line, conflicts){
           <div class="field"><label style="color:var(--stop-mat)">📦 Thiếu NL input</label><input type="number" data-f="stopMat" value="${r.stopMat||'0'}" min="0" style="border-color:#FDE68A"/></div>
           <div class="field"><label style="color:var(--stop-sku)">🔄 Chuyển đổi SKU</label><input type="number" data-f="stopSku" value="${r.stopSku||'0'}" min="0" style="border-color:#DDD6FE"/></div>
           <div class="field"><label style="color:var(--stop-break)">🔧 Hư máy</label><input type="number" data-f="stopMachine" value="${r.stopMachine||'0'}" min="0" style="border-color:#FECACA"/></div>
-          <div class="field"><label style="color:var(--stop-clean)">🧹 Vệ sinh/Chỉnh máy</label><input type="number" data-f="stopClean" value="${r.stopClean||'0'}" min="0" style="border-color:#FDE68A"/></div>
+          <div class="field"><label style="color:var(--stop-clean)">🧹 Chỉnh sửa máy</label><input type="number" data-f="stopClean" value="${r.stopClean||'0'}" min="0" style="border-color:#FDE68A"/></div>
         </div>
       </div>
 
