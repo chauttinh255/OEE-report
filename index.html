@@ -515,7 +515,7 @@ table.dt tr:hover td{background:var(--surface2)}
     <button class="tab-btn" onclick="switchView('catalog')">📋 Danh mục SP</button>
   </div>
 
-  <button class="btn btn-ghost" onclick="exportExcel()" style="color:var(--green);border-color:#BBF7D0">📊 Export Excel</button>
+  <button class="btn btn-ghost" onclick="openExportModal()" style="color:var(--green);border-color:#BBF7D0">📊 Export Excel</button>
   <button class="btn btn-primary" id="save-btn" onclick="saveAll()">💾 Lưu</button>
 </div>
 
@@ -1751,7 +1751,7 @@ function renderDetailTable(allRuns){
 }
 
 // ══ EXPORT ════════════════════════════════════════════════════════════════
-function exportExcel(){
+function exportExcel(fromDate=activeDate, toDate=activeDate){
   if(typeof XLSX==='undefined'){ toast('⚠ SheetJS chưa tải, thử lại','#D97706'); return; }
 
   const wb = XLSX.utils.book_new();
@@ -1870,26 +1870,25 @@ function exportExcel(){
   hdr2[25] = 'Chuyển\nSKU';
   hdr2[26] = 'Hư\nmáy';
   hdr2[27] = 'Chỉnh\nmáy';
-  hdr2[28] = 'hh:mm';
-  hdr2[29] = '%';
-  hdr2[30] = '%';
-  hdr2[31] = '%';
-  hdr2[32] = '%';
-  hdr2[33] = 'Note';
+  hdr2[0]='Date'; hdr2[1]='Day'; hdr2[2]='Line'; hdr2[3]='Số thứ tự máy'; hdr2[4]='Tên OP'; hdr2[5]='Code'; hdr2[6]='Item'; hdr2[7]='NW (g)';
+  hdr2[8]='Designed'; hdr2[9]='Target'; hdr2[10]='Actual'; hdr2[11]='Gap (ea/h)'; hdr2[12]='Passed'; hdr2[13]='Rejected by X ray'; hdr2[14]='Rejected by CWer'; hdr2[15]=' %';
+  hdr2[16]='Start (hh:mm:ss)'; hdr2[17]='End (hh:mm:ss)'; hdr2[18]='hours (hh:mm)'; hdr2[19]='Other (hh:mm)'; hdr2[20]='Hygiene (hh:mm)'; hdr2[21]='Break (hh:mm)'; hdr2[22]='hh:mm';
+  hdr2[23]='Thay\nbao bì'; hdr2[24]='Thiếu\nnguyên liệu'; hdr2[25]='Chuyển\nSKU'; hdr2[26]='Hư\nmáy'; hdr2[27]='Chỉnh\nmáy'; hdr2[28]='hh:mm'; hdr2[29]='%'; hdr2[30]='%'; hdr2[31]='%'; hdr2[32]='%'; hdr2[33]='Note';
 
-  /* ── DATA ROWS ── */
   const DAYS_VI = ['CN','T2','T3','T4','T5','T6','T7'];
-  const dateObj  = new Date(activeDate+'T00:00:00');
-  const dayStr   = DAYS_VI[dateObj.getDay()];
+  const datesToExport = Object.keys(DB).filter(k => k >= fromDate && k <= toDate).sort();
+  if(!datesToExport.length){ toast('⚠ Không có dữ liệu trong khoảng thời gian này!','#EF4444'); return; }
 
-  const dataRows = [];  // {excelRow (1-indexed), c, r, m}
-  const ws_data  = [hdr1, hdr2];
-  let rowIdx = 3; // Excel row number (1-indexed), data starts at row 3
+  const dataRows = [];
+  const ws_data = [hdr1, hdr2];
+  let rowIdx = 3;
 
-  ALL_MACHINES.forEach(m => {
-    const runs = getRuns(activeDate, m.id);
-    if(!runs.length) return;
-    runs.forEach((r) => {
+  datesToExport.forEach(dateStr => {
+    const dateObj = new Date(dateStr+'T00:00:00');
+    const dayStr = DAYS_VI[dateObj.getDay()];
+    ALL_MACHINES.forEach(m => {
+      const runs = getRuns(dateStr, m.id);
+      runs.forEach((r) => {
       const c        = calcRunOEE(r);
       const rejX     = +r.rejXray  || 0;
       const rejC     = +r.rejected || 0;
@@ -1906,7 +1905,7 @@ function exportExcel(){
       const endDisp   = r.endTime   ? (r.endNextDay   ? r.endTime  +' +1' : r.endTime  ) : '';
 
       const row = new Array(NCOLS).fill('');
-      row[0]  = activeDate;
+      row[0]  = dateStr;
       row[1]  = dayStr;
       row[2]  = m.line;
       row[3]  = m.name;
@@ -1946,6 +1945,7 @@ function exportExcel(){
       rowIdx++;
     });
   });
+});
 
   const ws = XLSX.utils.aoa_to_sheet(ws_data);
 
@@ -2148,7 +2148,7 @@ function exportExcel(){
   });
   XLSX.utils.book_append_sheet(wb, ws2, 'Summary');
 
-  XLSX.writeFile(wb, `OEE_Report_${activeDate}.xlsx`);
+  XLSX.writeFile(wb, `OEE_Report_${fromDate}${fromDate!==toDate?'_to_'+toDate:''}.xlsx`);
   toast('✅ Xuất Excel thành công!', '#16A34A');
 }
 
@@ -2198,6 +2198,35 @@ function saveFbConfig() {
         let clean = val.replace(/^const\s+firebaseConfig\s*=\s*/, '').replace(/;$/, '');
         parsed = (new Function(`return ${clean}`))();
       }
+      localStorage.setItem('fb_config', JSON.stringify(parsed));
+      toast('✅ Đã lưu cấu hình FB. Đang reload...', '#16A34A');
+      setTimeout(()=>location.reload(), 1000);
+    } catch(e) {
+      toast('⚠ JSON không hợp lệ!', '#EF4444');
+    }
+  }
+}
+
+// ══ EXPORT MODAL ════════════════════════════════════════════════════════
+function openExportModal() {
+  document.getElementById('export-from-date').value = activeDate;
+  document.getElementById('export-to-date').value = activeDate;
+  document.getElementById('export-modal').classList.add('open');
+}
+function closeExportModal() {
+  document.getElementById('export-modal').classList.remove('open');
+}
+function runExportExcel() {
+  const from = document.getElementById('export-from-date').value;
+  const to = document.getElementById('export-to-date').value;
+  if(!from || !to || from > to) {
+    toast('⚠ Khoảng thời gian không hợp lệ', '#EF4444');
+    return;
+  }
+  closeExportModal();
+  exportExcel(from, to);
+}
+
       if(typeof parsed !== 'object' || !parsed.projectId) throw new Error('Invalid config');
       localStorage.setItem('fb_config', JSON.stringify(parsed));
     } catch(e) {
