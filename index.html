@@ -708,6 +708,26 @@ table.dt tr:hover td{background:var(--surface2)}
   </div>
 </div>
 
+<!-- ══ EXPORT MODAL ════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="export-modal">
+  <div class="modal">
+    <div class="modal-title">📊 Xuất báo cáo (Export Excel)</div>
+    <div class="fg fg-2" style="gap:10px;margin-bottom:15px">
+      <div class="field">
+        <label>Từ ngày</label>
+        <input type="date" id="export-from-date" class="input"/>
+      </div>
+      <div class="field">
+        <label>Đến ngày</label>
+        <input type="date" id="export-to-date" class="input"/>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeExportModal()">Huỷ</button>
+      <button class="btn btn-primary" style="background:#16A34A" onclick="runExportExcel()">Tải xuống</button>
+    </div>
+  </div>
+</div>
 <!-- ══ TOAST ══════════════════════════════════════════════════════════════ -->
 <div id="toast"></div>
 
