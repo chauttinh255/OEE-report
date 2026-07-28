@@ -2227,16 +2227,7 @@ function runExportExcel() {
   exportExcel(from, to);
 }
 
-      if(typeof parsed !== 'object' || !parsed.projectId) throw new Error('Invalid config');
-      localStorage.setItem('fb_config', JSON.stringify(parsed));
-    } catch(e) {
-      toast('⚠ Cấu hình không hợp lệ', '#DC2626');
-      return;
-    }
-  }
-  toast('Đã lưu cấu hình. Đang khởi động lại...', '#16A34A');
-  setTimeout(() => location.reload(), 800);
-}
+
 
 // ══ INIT ═════════════════════════════════════════════════════════════════
 async function init(){
