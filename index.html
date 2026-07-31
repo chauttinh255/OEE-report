@@ -1896,7 +1896,7 @@ function exportExcel(fromDate=activeDate, toDate=activeDate){
   hdr2[23]='Thay\nbao bì'; hdr2[24]='Thiếu\nnguyên liệu'; hdr2[25]='Chuyển\nSKU'; hdr2[26]='Hư\nmáy'; hdr2[27]='Chỉnh\nmáy'; hdr2[28]='hh:mm'; hdr2[29]='%'; hdr2[30]='%'; hdr2[31]='%'; hdr2[32]='%'; hdr2[33]='Note';
 
   const DAYS_VI = ['CN','T2','T3','T4','T5','T6','T7'];
-  const datesToExport = Object.keys(DB).filter(k => k >= fromDate && k <= toDate).sort();
+  const datesToExport = Object.keys(store).filter(k => k >= fromDate && k <= toDate).sort();
   if(!datesToExport.length){ toast('⚠ Không có dữ liệu trong khoảng thời gian này!','#EF4444'); return; }
 
   const dataRows = [];
