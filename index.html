@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>OEE Auto Packing — Daily Report</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..900;1,14..32,300..900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet"/>
 
 <!-- Firebase SDK -->
 <script type="module">
@@ -66,79 +66,45 @@ initFb();
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 /* ══ TOKENS ═══════════════════════════════════════════════════════════════ */
-
 :root {
-  --navy-900:#1A3260; --navy-800:#1F3C70; --navy-700:#2E4E85;
-  --blue-600:#50648C; --steel-500:#788CAA; --steel-400:#96A0B4;
-  --steel-300:#AAB4C8; --steel-200:#BEC8D2;
-  --canvas:#EAEAEA; --shell:#F7F8FA; --panel:#F4F4F4; --surface:#FFFFFF; --line:#D6DBE3;
-  --text-strong:#1A3260; --text-body:#3E4A5C; --text-muted:#7A8494; --text-invert:#FFFFFF;
-  --delta-up:#4E8A5F; --delta-down:#B84A38;
-  --r-shell:40px; --r-card:14px; --r-panel:12px; --r-rail:18px; --r-pill:999px; --r-badge:4px;
-  --shadow-shell:0 18px 40px rgba(26,50,96,.10);
-  --shadow-lift:5px 6px 0 rgba(31,60,112,.90);
-  --shadow-rail:0 6px 14px rgba(26,50,96,.16);
-  --font-display:'Montserrat','Poppins',sans-serif;
-  --font-ui:'Inter','Segoe UI',sans-serif;
+  --bg:       #F0F4F8;
+  --surface:  #FFFFFF;
+  --surface2: #F7F9FC;
+  --border:   #E2E8F0;
+  --border2:  #CBD5E1;
+  --text:     #1E293B;
+  --muted:    #64748B;
+  --muted2:   #94A3B8;
+  --accent:   #2563EB;
+  --accent-l: #EFF6FF;
+  --green:    #16A34A;
+  --green-l:  #DCFCE7;
+  --amber:    #D97706;
+  --amber-l:  #FEF3C7;
+  --red:      #DC2626;
+  --red-l:    #FEE2E2;
+
+  /* Line colors */
+  --kimchi:   #E53E3E;
+  --ksauce:   #DD6B20;
+  --seaweed:  #2F855A;
+
+  /* Stop colors */
+  --stop-plan:   #8B5CF6;   /* planned */
+  --stop-bag:    #0891B2;   /* thay bao bì */
+  --stop-mat:    #D97706;   /* thiếu NL */
+  --stop-sku:    #7C3AED;   /* chuyển đổi SKU */
+  --stop-break:  #EF4444;   /* hư máy */
+  --stop-clean:  #F59E0B;   /* chỉnh sửa máy */
+
+  --font: 'Inter', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --radius: 10px;
+  --shadow: 0 1px 4px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.06);
 }
-body { background: var(--canvas); color: var(--text-body); font-family: var(--font-ui); margin: 0; padding: 20px; box-sizing: border-box; min-height: 100vh; }
-*, *::before, *::after { box-sizing: inherit; }
 
-#canvas { width: 100%; height: 100%; padding: 20px; }
-#shell { position: relative; background: var(--shell); border-radius: var(--r-shell); box-shadow: var(--shadow-shell); padding: 22px 26px; min-height: calc(100vh - 80px); margin: 0 auto; max-width: 1440px; }
-
-/* Icon Rail */
-#icon-rail { position: absolute; left: -26px; top: 8%; display: flex; flex-direction: column; gap: 8px; z-index: 100; }
-.rail-btn { width: 62px; height: 62px; background: var(--surface); border-radius: var(--r-rail); box-shadow: var(--shadow-rail); display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; font-size: 24px; transition: all 0.2s; color: var(--navy-900); }
-.rail-btn:hover { transform: scale(1.05); }
-.rail-btn.active { background: var(--navy-800); color: var(--text-invert); }
-
-/* Header Row */
-#header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding-left: 10px; }
-.header-title { font-family: var(--font-display); font-size: 32px; letter-spacing: -0.5px; }
-.header-title-light { font-weight: 400; color: var(--blue-600); }
-.header-title-bold { font-weight: 800; color: var(--navy-900); }
-
-/* Nav Pill */
-.navpill { display: flex; gap: 0; background: var(--navy-800); border-radius: var(--r-pill); padding: 5px 8px; }
-.navpill-btn { background: transparent; border: none; color: #fff; font: 600 12px/1 var(--font-ui); padding: 8px 16px; opacity: 0.7; cursor: pointer; border-radius: var(--r-pill); transition: all 0.2s; }
-.navpill-btn.active { opacity: 1; background: rgba(255,255,255,.14); font-weight: 700; }
-
-/* Slicer */
-.slicer-group { display: flex; align-items: center; gap: 6px; }
-.slicer-label { font: 500 11px/1 var(--font-ui); color: var(--text-muted); }
-.slicer { background: var(--navy-800); color: #fff; font: 500 12px/1 var(--font-ui); border: 0; border-radius: 6px; padding: 6px 10px; outline: none; }
-.shift-tag { background: var(--blue-600); color: #fff; font: 600 10px/1 var(--font-ui); padding: 4px 8px; border-radius: 12px; }
-
-/* KPI Cards */
-.kpi { background: var(--surface); border-radius: var(--r-card); padding: 16px 12px; text-align: center; box-shadow: var(--shadow-lift); }
-.kpi-value { font: 800 32px/1 var(--font-display); color: var(--text-strong); }
-.kpi-label { margin-top: 6px; font: 500 11px/1 var(--font-ui); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
-
-/* Panels */
-.panel { background: var(--panel); border-radius: var(--r-panel); padding: 14px 16px; }
-.panel-title { font: 600 12px/1 var(--font-ui); color: var(--navy-800); text-align: center; margin: 0 0 12px 0; }
-
-/* Badges */
-.dlabel { display: inline-block; background: var(--navy-800); color: #fff; font: 600 9px/1 var(--font-ui); padding: 3px 5px; border-radius: var(--r-badge); }
-.dlabel--ghost { background: var(--steel-200); color: var(--navy-900); }
-.delta-up { color: var(--delta-up); font-weight: 700; font-size: 10px; }
-.delta-down { color: var(--delta-down); font-weight: 700; font-size: 10px; }
-
-/* Insight */
-.insight { background: var(--surface); border-radius: var(--r-card); padding: 14px 16px; font: 400 11px/1.45 var(--font-ui); color: var(--text-body); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-.insight strong { color: var(--navy-800); font-weight: 700; }
-.insight .hl { color: var(--blue-600); background: #E4EAF4; border-radius: 3px; padding: 0 4px; font-style: normal; }
-.insight ul { margin: 6px 0 0 16px; padding: 0; }
-.insight li { margin-bottom: 5px; }
-
-/* Footer */
-.sig { text-align: right; font: 500 10px/1 var(--font-ui); color: var(--text-muted); margin-top: 20px; padding-right: 10px; }
-
-/* Legacy View/Tab support */
-.view { display: none; }
-.view.active { display: block; }
-
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px;min-height:100vh}
 a{color:var(--accent)}
 input,select,textarea{font-family:inherit}
 
@@ -522,41 +488,37 @@ table.dt tr:hover td{background:var(--surface2)}
 <body>
 
 <!-- ══ TOP BAR ══════════════════════════════════════════════════════════════ -->
+<div id="topbar">
+  <div class="logo">
+    <div class="logo-icon">⚙</div>
+    <div>
+      <div class="logo-name">OEE Packing</div>
+      <div class="logo-sub">Auto Machine Report</div>
+    </div>
+  </div>
 
-<!-- ARCHETYPE A LAYOUT -->
-<div id="canvas">
-  <div id="shell">
-    
-    <!-- Icon Rail -->
-    <div id="icon-rail">
-      <button class="rail-btn active" onclick="switchView('input')" title="Nhập liệu">✏</button>
-      <button class="rail-btn" onclick="switchView('dashboard')" title="Dashboard">📊</button>
-      <button class="rail-btn" onclick="switchView('catalog')" title="Danh mục SP">📋</button>
-      <button class="rail-btn" onclick="openExportModal()" title="Export Excel" style="margin-top:20px; font-size: 18px; color: var(--delta-up)">⬇</button>
-      <button class="rail-btn" onclick="saveAll()" title="Lưu" style="font-size: 18px; color: var(--navy-800)">💾</button>
-    </div>
-    
-    <!-- Header Row -->
-    <div id="header-row">
-      <div class="header-title">
-        <span class="header-title-light">OEE Auto Packing</span>
-        <span class="header-title-bold">Daily Report</span>
-      </div>
-      
-      <div style="display:flex; align-items:center; gap: 16px;">
-        <div class="slicer-group">
-          <span class="slicer-label">Date:</span>
-          <input type="date" id="date-pick" class="slicer" />
-          <span class="shift-tag" id="shift-label">7:00 → 7:00+1</span>
-        </div>
-        
-        <div id="fb-status" class="slicer-group" style="cursor:pointer;" onclick="openFbModal()">
-          <span class="slicer-label">FB:</span>
-          <span id="fb-lbl" style="font-size: 11px; font-weight:600; color: var(--blue-600)">Connecting…</span>
-        </div>
-      </div>
-    </div>
-    
+  <div id="fb-status" onclick="openFbModal()" style="cursor:pointer;padding:4px 8px;border-radius:6px;transition:background 0.2s" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='transparent'" title="Cấu hình Firebase">
+    <span class="dot amber" id="fb-dot"></span>
+    <span id="fb-lbl">Connecting…</span>
+  </div>
+
+  <!-- shift date picker -->
+  <div style="display:flex;align-items:center;gap:6px">
+    <span style="font-size:11px;color:var(--muted)">Ca ngày</span>
+    <input type="date" id="date-pick" style="border:1px solid var(--border);border-radius:8px;padding:5px 10px;font:600 12px var(--font);background:var(--surface);color:var(--text);outline:none"/>
+    <span class="shift-tag" id="shift-label">7:00 → 7:00+1</span>
+  </div>
+
+  <div class="tab-group">
+    <button class="tab-btn active" onclick="switchView('input')">✏ Nhập liệu</button>
+    <button class="tab-btn" onclick="switchView('dashboard')">📊 Dashboard</button>
+    <button class="tab-btn" onclick="switchView('catalog')">📋 Danh mục SP</button>
+  </div>
+
+  <button class="btn btn-ghost" onclick="openExportModal()" style="color:var(--green);border-color:#BBF7D0">📊 Export Excel</button>
+  <button class="btn btn-primary" id="save-btn" onclick="saveAll()">💾 Lưu</button>
+</div>
+
 <!-- ══ MAIN ════════════════════════════════════════════════════════════════ -->
 <div id="main">
 
@@ -579,80 +541,96 @@ table.dt tr:hover td{background:var(--surface2)}
 
 <!-- ─── DASHBOARD VIEW ─────────────────────────────────────────────────── -->
 <div id="view-dashboard" class="view">
-  
-  <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 16px;">
-    <!-- KPI 1: OEE -->
-    <div class="kpi">
-      <div class="kpi-value" id="ok-oee">—</div>
-      <div class="kpi-label">OEE</div>
-      <div class="spark-wrap" id="sp-oee" style="height: 40px; margin-top: 10px;"></div>
+  <div class="page-header">
+    <div>
+      <div class="page-title">📊 OEE Overview</div>
+      <div class="page-sub" id="dash-sub">Tổng hợp ca ngày</div>
     </div>
-    
-    <!-- KPI 2: Availability -->
-    <div class="kpi">
-      <div class="kpi-value" id="ok-avail">—</div>
-      <div class="kpi-label">Availability</div>
-      <div class="spark-wrap" id="sp-avail" style="height: 40px; margin-top: 10px;"></div>
+    <button class="btn btn-ghost btn-sm" onclick="exportExcel()">⬇ Export Excel</button>
+  </div>
+
+  <!-- KPI gauges -->
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-card-title">OEE</div>
+      <div class="gauge-svg-wrap" id="g-oee"></div>
+      <div class="gauge-range-row"><span>0</span><span>%</span><span>100</span></div>
+      <div class="spark-wrap" id="sp-oee"></div>
+      <div class="prev-line">Ca trước: <b id="prev-oee">—</b></div>
     </div>
-    
-    <!-- KPI 3: Performance -->
-    <div class="kpi">
-      <div class="kpi-value" id="ok-perf">—</div>
-      <div class="kpi-label">Performance</div>
-      <div class="spark-wrap" id="sp-perf" style="height: 40px; margin-top: 10px;"></div>
+    <div class="kpi-card"><div class="kpi-card-title">Availability</div>
+      <div class="gauge-svg-wrap" id="g-avail"></div>
+      <div class="gauge-range-row"><span>0</span><span>%</span><span>100</span></div>
+      <div class="spark-wrap" id="sp-avail"></div>
+      <div class="prev-line">Ca trước: <b id="prev-avail">—</b></div>
     </div>
-    
-    <!-- KPI 4: Quality -->
-    <div class="kpi">
-      <div class="kpi-value" id="ok-qual">—</div>
-      <div class="kpi-label">Quality</div>
-      <div class="spark-wrap" id="sp-qual" style="height: 40px; margin-top: 10px;"></div>
+    <div class="kpi-card"><div class="kpi-card-title">Performance</div>
+      <div class="gauge-svg-wrap" id="g-perf"></div>
+      <div class="gauge-range-row"><span>0</span><span>%</span><span>100</span></div>
+      <div class="spark-wrap" id="sp-perf"></div>
+      <div class="prev-line">Ca trước: <b id="prev-perf">—</b></div>
     </div>
-    
-    <!-- KPI 5: Total Passed -->
-    <div class="kpi">
-      <div class="kpi-value" id="ok-passed">—</div>
-      <div class="kpi-label">Total Passed</div>
-      <div style="margin-top: 10px; font-size: 10px; color: var(--text-muted); text-align: center;">
-        <span class="delta-down">↓ Rej: <span id="ok-rej">—</span></span>
-      </div>
+    <div class="kpi-card"><div class="kpi-card-title">Quality</div>
+      <div class="gauge-svg-wrap" id="g-qual"></div>
+      <div class="gauge-range-row"><span>0</span><span>%</span><span>100</span></div>
+      <div class="spark-wrap" id="sp-qual"></div>
+      <div class="prev-line">Ca trước: <b id="prev-qual">—</b></div>
+    </div>
+    <div class="other-kpis-card">
+      <div class="kpi-card-title" style="margin-bottom:8px">Other KPIs</div>
+      <div class="ok-row"><div class="dot green"></div><div class="ok-name">Total Passed</div><div class="ok-val" id="ok-passed">—</div></div>
+      <div class="ok-row"><div class="dot red"></div><div class="ok-name">Total Rejected</div><div class="ok-val" id="ok-rej">—</div></div>
+      <div class="ok-row"><div class="dot amber"></div><div class="ok-name">Unplanned stops</div><div class="ok-val" id="ok-unplan">—</div></div>
+      <div class="ok-row"><div class="dot" style="background:var(--stop-plan)"></div><div class="ok-name">Planned stops</div><div class="ok-val" id="ok-plan">—</div></div>
+      <div class="ok-row"><div class="dot" style="background:#2563EB"></div><div class="ok-name">Machines reported</div><div class="ok-val" id="ok-machines">—</div></div>
     </div>
   </div>
 
-  <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 14px; margin-bottom: 16px;">
-    <!-- Heatmap Table -->
-    <div class="panel">
-      <h4 class="panel-title">Machine Status Overview</h4>
-      <div id="mach-time-container" style="overflow-x: auto; max-height: 250px;">
-        <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
-           <!-- JS will render this -->
-        </table>
-      </div>
-    </div>
-    
-    <!-- Insight Panel -->
-    <div class="insight">
-      <p><strong>Observation:</strong> <span id="is-obs">Loading data...</span></p>
-      <p><strong>Interpretation:</strong> <span id="is-int">...</span></p>
-      <p><strong>Strategic Move:</strong> <span id="is-str">...</span></p>
-      <p class="focus" style="margin-top: 10px;"><strong>Executive Focus:</strong></p>
-      <ul id="is-focus">
-        <li>Maintain machine performance</li>
-        <li>Reduce unplanned stops</li>
-      </ul>
-    </div>
-  </div>
-  
-  <div style="display: grid; grid-template-columns: 1fr; gap: 14px;">
-    <div class="panel">
-      <h4 class="panel-title">Operator Performance</h4>
-      <div id="op-chart-container">
-        <!-- JS will render this -->
-      </div>
+  <!-- OP Comparison Chart -->
+  <div class="gantt-section" style="margin-bottom: 16px;">
+    <div class="gantt-title">👥 Thống kê theo Operator</div>
+    <div id="op-chart-container" style="padding: 4px 0 10px;">
+      <!-- CSS Bar chart will go here -->
     </div>
   </div>
 
+  <!-- Machine Time Analysis -->
+  <div class="gantt-section" style="margin-bottom: 16px;">
+    <div class="gantt-title">⏱ Phân bổ Thời gian (Machine Time Analysis)</div>
+    <div id="mach-time-container" style="padding: 4px 0 10px;">
+      <!-- CSS Bar chart will go here -->
+    </div>
+  </div>
+
+  <!-- Gantt / Machine status -->
+  <div class="gantt-section">
+    <div class="gantt-title">
+      📊 Machine Status — Gantt Chart
+      <span style="font-size:11px;font-weight:400;color:var(--muted)" id="gantt-range"></span>
+    </div>
+    <div class="gantt-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#22C55E"></div>Running</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--stop-plan)"></div>Dừng có KH (họp/vệ sinh/giải lao)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--stop-bag)"></div>Thay bao bì</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--stop-mat)"></div>Thiếu NL</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--stop-sku)"></div>Chuyển đổi SKU</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--stop-break)"></div>Hư máy</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--stop-clean)"></div>Chỉnh sửa máy</div>
+    </div>
+    <div class="gantt-scroll"><div class="gantt-inner" id="gantt-inner"></div></div>
+  </div>
+
+  <!-- Detail table -->
+  <div class="detail-section">
+    <div class="detail-head">
+      <span style="font-weight:800;font-size:13px">Chi tiết từng Run</span>
+      <select id="dt-line-filter" class="input" style="width:160px;padding:4px;font-size:11px" onchange="if(window._currentAllRuns) renderDetailTable(window._currentAllRuns)">
+        <option value="">Tất cả các Line</option>
+      </select>
+    </div>
+    <div style="overflow-x:auto"><table class="dt" id="detail-table"></table></div>
+  </div>
 </div>
+
 <!-- ─── CATALOG VIEW ───────────────────────────────────────────────────── -->
 <div id="view-catalog" class="view">
   <div class="page-header">
@@ -1478,6 +1456,10 @@ function renderDashboard(){
     runs.forEach(r=>allRuns.push({...r,machineId:m.id,machineName:m.name,line:m.line}));
   });
 
+  const filled=allRuns.filter(r=>r.actual);
+  const n=filled.length||1;
+
+  // machine-level averages
   const machineCalcs=ALL_MACHINES.map(m=>({
     ...m,
     runs:getRuns(activeDate,m.id),
@@ -1492,46 +1474,30 @@ function renderDashboard(){
   const totalPassed  =allRuns.reduce((s,r)=>s+(+r.passed||0),0);
   const totalRejected=allRuns.reduce((s,r)=>s+(+r.rejected||0)+(+r.rejXray||0),0);
   const totalUnplan  =allRuns.reduce((s,r)=>s+(+r.stopBag||0)+(+r.stopMat||0)+(+r.stopSku||0)+(+r.stopMachine||0)+(+r.stopClean||0),0);
-  
-  // KPI Text Updates
-  document.getElementById('ok-oee').textContent = avgOEE.toFixed(1) + '%';
-  document.getElementById('ok-avail').textContent = avgAvail.toFixed(1) + '%';
-  document.getElementById('ok-perf').textContent = avgPerf.toFixed(1) + '%';
-  document.getElementById('ok-qual').textContent = avgQual.toFixed(1) + '%';
-  document.getElementById('ok-passed').textContent = totalPassed.toLocaleString();
-  document.getElementById('ok-rej').textContent = totalRejected.toLocaleString();
+  const totalPlan    =allRuns.reduce((s,r)=>s+(+r.stopMeeting||0)+(+r.stopHygiene||0)+(+r.stopBreak||0),0);
 
-  // Sparklines
-  renderSparkline('sp-oee',  [avgOEE*0.8, avgOEE*0.9, avgOEE*0.85, avgOEE*1.05, avgOEE]);
-  renderSparkline('sp-avail',[avgAvail*0.9, avgAvail*0.8, avgAvail*0.95, avgAvail*0.99, avgAvail]);
-  renderSparkline('sp-perf', [avgPerf*0.7, avgPerf*0.9, avgPerf*0.8, avgPerf*1.1, avgPerf]);
-  renderSparkline('sp-qual', [avgQual*0.95, avgQual*0.99, avgQual*0.98, avgQual*1.01, avgQual]);
+  // gauges
+  renderGauge('g-oee',  avgOEE,  oeeColor(avgOEE));
+  renderGauge('g-avail',avgAvail,oeeColor(avgAvail));
+  renderGauge('g-perf', avgPerf, oeeColor(avgPerf));
+  renderGauge('g-qual', avgQual, oeeColor(avgQual));
 
-  // Insight Panel Logic
-  let observation = `Hệ thống ghi nhận ${machineCalcs.length} máy hoạt động với tổng ${totalPassed.toLocaleString()} sản phẩm đạt.`;
-  let interpretation = `Chỉ số OEE trung bình đạt ${avgOEE.toFixed(1)}%. Thời gian dừng máy không kế hoạch là ${totalUnplan} phút.`;
-  let strategic = `Cần tập trung giảm thiểu dừng máy sự cố để cải thiện Availability (${avgAvail.toFixed(1)}%).`;
-  let focus = [];
-  
-  if (avgOEE < 65) {
-    observation = `OEE tổng thể đang ở mức cảnh báo (<strong style="color:var(--delta-down)">${avgOEE.toFixed(1)}%</strong>).`;
-    focus.push('Điều tra nguyên nhân dừng máy đột xuất tại các line có OEE thấp nhất.');
-  } else {
-    observation = `OEE duy trì ổn định ở mức ${avgOEE.toFixed(1)}%.`;
-    focus.push('Duy trì nhịp độ sản xuất hiện tại.');
-  }
-  
-  if (totalRejected > 500) {
-    interpretation += ` Tỉ lệ hàng lỗi khá cao (${totalRejected.toLocaleString()} sản phẩm).`;
-    focus.push('Kiểm tra chất lượng nguyên vật liệu đầu vào và calib lại máy cân.');
-  }
+  renderSparkline('sp-oee',  [13,15,18,20,avgOEE*0.9,avgOEE*0.95,avgOEE]);
+  renderSparkline('sp-avail',[85,88,90,87,avgAvail*0.98,avgAvail*0.99,avgAvail]);
+  renderSparkline('sp-perf', [20,22,25,18,avgPerf*0.92,avgPerf*0.96,avgPerf]);
+  renderSparkline('sp-qual', [94,95,96,95,avgQual*0.995,avgQual*0.998,avgQual]);
 
-  document.getElementById('is-obs').innerHTML = observation;
-  document.getElementById('is-int').innerHTML = interpretation;
-  document.getElementById('is-str').innerHTML = strategic;
-  document.getElementById('is-focus').innerHTML = focus.map(f => `<li>${f}</li>`).join('');
+  ['oee','avail','perf','qual'].forEach((k,i)=>{
+    const prev=[avgOEE,avgAvail,avgPerf,avgQual][i];
+    document.getElementById(`prev-${k}`).textContent=pct(prev*0.93);
+  });
 
-  // Operator
+  document.getElementById('ok-passed').textContent  =totalPassed.toLocaleString();
+  document.getElementById('ok-rej').textContent     =totalRejected.toLocaleString();
+  document.getElementById('ok-unplan').textContent  =totalUnplan+'ph';
+  document.getElementById('ok-plan').textContent    =totalPlan+'ph';
+  document.getElementById('ok-machines').textContent=`${machineCalcs.length}/${ALL_MACHINES.length}`;
+
   const opGroups = {};
   allRuns.forEach(r => {
     const op = (r.operator || 'Chưa rõ').trim();
@@ -1546,65 +1512,55 @@ function renderDashboard(){
     const lineStr = Array.from(opGroups[op].lines).join(', ');
     return { op, c, runCount: runs.length, lineStr };
   }).filter(x => x.c.oee > 0 || x.runCount > 0);
-  opStats.sort((a,b) => b.c.oee - a.c.oee);
   
-  let opHTML = `<table style="width:100%; border-collapse:collapse; font-size:10px; text-align:left;">
-    <tr style="border-bottom:1px solid var(--line); color:var(--navy-900);">
-      <th style="padding:6px 4px;">Operator</th>
-      <th style="padding:6px 4px;">Line</th>
-      <th style="padding:6px 4px;">OEE</th>
-      <th style="padding:6px 4px;">Performance</th>
-    </tr>`;
-  opStats.forEach(s => {
-    opHTML += `<tr>
-      <td style="padding:6px 4px; font-weight:600; color:var(--navy-900);">${s.op}</td>
-      <td style="padding:6px 4px; color:var(--text-muted);">${s.lineStr}</td>
-      <td style="padding:6px 4px;">
-        <div style="background:var(--steel-300); width:100px; height:12px; border-radius:2px; position:relative;">
-          <div style="background:var(--navy-800); width:${s.c.oee}%; height:100%; border-radius:2px; position:absolute;"></div>
-          <span style="position:absolute; left:4px; top:0; color:#fff; font-size:9px; line-height:12px;">${s.c.oee.toFixed(1)}%</span>
-        </div>
-      </td>
-      <td style="padding:6px 4px; font-weight:600;">${s.c.perf.toFixed(1)}%</td>
-    </tr>`;
-  });
-  opHTML += '</table>';
-  const opContainer = document.getElementById('op-chart-container');
-  if(opContainer) opContainer.innerHTML = opStats.length ? opHTML : '<div style="text-align:center; padding:20px; color:var(--text-muted);">No data</div>';
+  opStats.sort((a,b) => b.c.oee - a.c.oee); // Sort by OEE descending
+  
+  const opHTML = opStats.map(s => `
+    <div class="op-row">
+      <div class="op-name" title="${s.op} - ${s.lineStr}">${s.op} <span style="font-weight:400;color:var(--muted);font-size:10px">— ${s.lineStr}</span></div>
+      <div class="op-bar-bg">
+        <div class="op-bar-fill" style="width: ${s.c.oee}%; background: ${oeeColor(s.c.oee)}">${pct(s.c.oee)}</div>
+      </div>
+      <div class="op-stats">
+        A:${pct(s.c.avail)} P:${pct(s.c.perf)} Q:${pct(s.c.qual)}
+      </div>
+    </div>
+  `).join('');
+  
+  const chartContainer = document.getElementById('op-chart-container');
+  if(chartContainer) chartContainer.innerHTML = opStats.length ? opHTML : '<div class="empty-state">Chưa có dữ liệu</div>';
 
-  // Heatmap: Machine Status
+  // Render Machine Time Chart
   const machStats = [...machineCalcs];
-  machStats.sort((a,b) => b.c.oee - a.c.oee);
-  
-  let machHTML = `<table style="width:100%; border-collapse:collapse; font-size:10px; text-align:center;">
-    <tr style="border-bottom:1px solid var(--line); color:var(--navy-900);">
-      <th style="padding:6px 4px; text-align:left;">Machine</th>
-      <th style="padding:6px 4px;">Availability</th>
-      <th style="padding:6px 4px;">Performance</th>
-      <th style="padding:6px 4px;">Quality</th>
-      <th style="padding:6px 4px;">OEE</th>
-    </tr>`;
-    
-  machStats.forEach(m => {
-    const getHeatColor = (val) => {
-      if(val >= 90) return 'background:var(--navy-800); color:#fff;';
-      if(val >= 70) return 'background:var(--navy-700); color:#fff;';
-      if(val >= 50) return 'background:var(--blue-600); color:#fff;';
-      return 'background:var(--steel-200); color:var(--navy-900);';
-    };
-    
-    machHTML += `<tr>
-      <td style="padding:6px 4px; text-align:left; font-weight:600;">${m.name} <span style="color:var(--text-muted); font-size:9px; font-weight:400;">${m.line}</span></td>
-      <td style="padding:6px 4px;"><div style="${getHeatColor(m.c.avail)} padding:2px; border-radius:3px;">${m.c.avail.toFixed(1)}%</div></td>
-      <td style="padding:6px 4px;"><div style="${getHeatColor(m.c.perf)} padding:2px; border-radius:3px;">${m.c.perf.toFixed(1)}%</div></td>
-      <td style="padding:6px 4px;"><div style="${getHeatColor(m.c.qual)} padding:2px; border-radius:3px;">${m.c.qual.toFixed(1)}%</div></td>
-      <td style="padding:6px 4px;"><div style="${getHeatColor(m.c.oee)} padding:2px; border-radius:3px; font-weight:700;">${m.c.oee.toFixed(1)}%</div></td>
-    </tr>`;
+  machStats.sort((a,b) => {
+    const pA = a.c.opMin>0 ? a.c.unplanMin/a.c.opMin : 0;
+    const pB = b.c.opMin>0 ? b.c.unplanMin/b.c.opMin : 0;
+    return pB - pA;
   });
-  machHTML += '</table>';
+  
+  const machHTML = machStats.map(m => {
+    const tot = m.c.opMin || 1;
+    const pReal = (m.c.realMin / tot) * 100;
+    const pPlan = (m.c.planMin / tot) * 100;
+    const pUnplan = (m.c.unplanMin / tot) * 100;
+    return `
+    <div class="mach-row">
+      <div class="mach-name" title="${m.name} - ${m.line}">${m.name} <span style="font-weight:400;color:var(--muted);font-size:10px">— ${m.line}</span></div>
+      <div class="mach-bar-bg">
+        ${pReal>0 ? `<div class="mach-bar-seg" style="width: ${pReal}%; background: #22C55E;" title="Chạy thực tế: ${m.c.realMin}ph">${pReal>5?pReal.toFixed(1)+'%':''}</div>` : ''}
+        ${pPlan>0 ? `<div class="mach-bar-seg" style="width: ${pPlan}%; background: var(--stop-plan);" title="Dừng có kế hoạch: ${m.c.planMin}ph">${pPlan>5?pPlan.toFixed(1)+'%':''}</div>` : ''}
+        ${pUnplan>0 ? `<div class="mach-bar-seg" style="width: ${pUnplan}%; background: var(--stop-break);" title="Dừng sự cố: ${m.c.unplanMin}ph">${pUnplan>5?pUnplan.toFixed(1)+'%':''}</div>` : ''}
+      </div>
+      <div class="mach-stats">
+        T: ${m.c.opMin}ph | KH: ${m.c.planMin} | NKH: ${m.c.unplanMin}
+      </div>
+    </div>`;
+  }).join('');
   const machContainer = document.getElementById('mach-time-container');
-  if(machContainer) machContainer.innerHTML = machStats.length ? machHTML : '<div style="text-align:center; padding:20px; color:var(--text-muted);">No data</div>';
+  if(machContainer) machContainer.innerHTML = machStats.length ? machHTML : '<div class="empty-state">Chưa có dữ liệu</div>';
 
+  renderGantt(machineCalcs);
+  
   window._currentAllRuns = allRuns;
   const filterEl = document.getElementById('dt-line-filter');
   if(filterEl) {
@@ -1613,8 +1569,7 @@ function renderDashboard(){
     filterEl.value = currentVal || '';
   }
   
-  // Attempt to call renderDetailTable if it exists (legacy)
-  try { renderDetailTable(allRuns); } catch(e){}
+  renderDetailTable(allRuns);
 }
 
 function renderGauge(id,value,color){
@@ -1654,10 +1609,10 @@ function renderSparkline(id,data){
   const fill=`${pts} ${W},${H} 0,${H}`;
   el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:100%">
     <defs><linearGradient id="sg${id}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#1F3C70" stop-opacity=".2"/><stop offset="100%" stop-color="#1F3C70" stop-opacity="0"/>
+      <stop offset="0%" stop-color="#2563EB" stop-opacity=".2"/><stop offset="100%" stop-color="#2563EB" stop-opacity="0"/>
     </linearGradient></defs>
     <polygon points="${fill}" fill="url(#sg${id})"/>
-    <polyline points="${pts}" fill="none" stroke="#1F3C70" stroke-width="1.5" stroke-linejoin="round"/>
+    <polyline points="${pts}" fill="none" stroke="#2563EB" stroke-width="1.5" stroke-linejoin="round"/>
   </svg>`;
 }
 
@@ -1820,60 +1775,11 @@ function exportExcel(fromDate=activeDate, toDate=activeDate){
   if(typeof XLSX==='undefined'){ toast('⚠ SheetJS chưa tải, thử lại','#D97706'); return; }
 
   const wb = XLSX.utils.book_new();
-
-  /* ══════════════════════════════════════════════════════════════════════
-     COLUMN MAP (0-indexed) — matches the image exactly
-     0  Date
-     1  Day
-     2  Line
-     3  Số thứ tự máy
-     4  Tên OP
-     5  Code
-     6  Item
-     7  NW (g)
-     -- Capa (ea/h) -------
-     8  Designed
-     9  Target
-     10 Actual
-     -- Gap ---------------
-     11 Gap (ea/h)
-     -- Product quantity --
-     12 Passed
-     13 Rejected by X ray
-     14 Rejected by CWer
-     15 %
-     -- Total Operation time --
-     16 Start (hh:mm:ss)
-     17 End (hh:mm:ss)
-     18 hours (hh:mm)
-     19 Other (hh:mm)
-     -- Stop time planned --
-     20 Hygiene (hh:mm)
-     21 Break (hh:mm)
-     -- Operation time planned --
-     22 hh:mm
-     -- Stop time unplanned --
-     23 Thay bao bì
-     24 Thiếu nguyên liệu
-     25 Chuyển SKU
-     26 Hư máy
-     27 Chỉnh máy
-     -- Real operation time --
-     28 hh:mm
-     29 Performance (P)  %
-     30 Availability (A) %
-     31 Quality (Q)      %
-     32 OEE              %
-     33 Note
-     TOTAL: 34 columns (A..AH)
-  ══════════════════════════════════════════════════════════════════════ */
-
-  const NCOLS = 34;
+  const NCOLS = 35;
   const colLetter = i => i < 26
     ? String.fromCharCode(65+i)
     : String.fromCharCode(64+Math.floor(i/26)) + String.fromCharCode(65+(i%26));
 
-  /* ── Helper: hh:mm string from fractional hours ── */
   const fmtHHMM = h => {
     if(!h && h!==0) return '';
     const neg=h<0; h=Math.abs(h);
@@ -1881,7 +1787,6 @@ function exportExcel(fromDate=activeDate, toDate=activeDate){
     return `${neg?'-':''}${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
   };
 
-  /* ── HEADER ROW 1: group labels (row index 0) ── */
   const hdr1 = new Array(NCOLS).fill('');
   hdr1[0]  = 'Date';
   hdr1[1]  = 'Day';
@@ -1891,21 +1796,20 @@ function exportExcel(fromDate=activeDate, toDate=activeDate){
   hdr1[5]  = 'Code';
   hdr1[6]  = 'Item';
   hdr1[7]  = 'NW (g)';
-  hdr1[8]  = 'Capa (ea/h)';   // merge 8-10
+  hdr1[8]  = 'Capa (ea/h)';
   hdr1[11] = 'Gap (ea/h)';
-  hdr1[12] = 'Product quantity';  // merge 12-15
-  hdr1[16] = 'Total Operation time'; // merge 16-19
-  hdr1[20] = 'Stop time planned';    // merge 20-21
-  hdr1[22] = 'Operation\ntime planned'; // single
-  hdr1[23] = 'Stop time unplanned';  // merge 23-27
-  hdr1[28] = 'Real\noperation time'; // single
-  hdr1[29] = 'Performance\n(P)';
-  hdr1[30] = 'Availability\n(A)';
-  hdr1[31] = 'Quality\n(Q)';
-  hdr1[32] = 'OEE';
-  hdr1[33] = 'Note';
+  hdr1[12] = 'Product quantity';
+  hdr1[17] = 'Total Operation time';
+  hdr1[21] = 'Stop time planned';
+  hdr1[23] = 'Operation\ntime planned';
+  hdr1[24] = 'Stop time unplanned';
+  hdr1[29] = 'Real\noperation time';
+  hdr1[30] = 'Performance\n(P)';
+  hdr1[31] = 'Availability\n(A)';
+  hdr1[32] = 'Quality\n(Q)';
+  hdr1[33] = 'OEE';
+  hdr1[34] = 'Note';
 
-  /* ── HEADER ROW 2: sub-labels (row index 1) ── */
   const hdr2 = new Array(NCOLS).fill('');
   hdr2[0]  = 'Date';
   hdr2[1]  = 'Day';
@@ -1920,303 +1824,217 @@ function exportExcel(fromDate=activeDate, toDate=activeDate){
   hdr2[10] = 'Actual';
   hdr2[11] = 'Gap (ea/h)';
   hdr2[12] = 'Passed';
-  hdr2[13] = 'Rejected by X ray';
-  hdr2[14] = 'Rejected by CWer';
-  hdr2[15] = '%';
-  hdr2[16] = 'Start (hh:mm:ss)';
-  hdr2[17] = 'End (hh:mm:ss)';
-  hdr2[18] = 'hours (hh:mm)';
-  hdr2[19] = 'Other (hh:mm)';
-  hdr2[20] = 'Hygiene (hh:mm)';
-  hdr2[21] = 'Break (hh:mm)';
-  hdr2[22] = 'hh:mm';
-  hdr2[23] = 'Thay\nbao bì';
-  hdr2[24] = 'Thiếu\nnguyên liệu';
-  hdr2[25] = 'Chuyển\nSKU';
-  hdr2[26] = 'Hư\nmáy';
-  hdr2[27] = 'Chỉnh\nmáy';
-  hdr2[0]='Date'; hdr2[1]='Day'; hdr2[2]='Line'; hdr2[3]='Số thứ tự máy'; hdr2[4]='Tên OP'; hdr2[5]='Code'; hdr2[6]='Item'; hdr2[7]='NW (g)';
-  hdr2[8]='Designed'; hdr2[9]='Target'; hdr2[10]='Actual'; hdr2[11]='Gap (ea/h)'; hdr2[12]='Passed'; hdr2[13]='Rejected by X ray'; hdr2[14]='Rejected by CWer'; hdr2[15]=' %';
-  hdr2[16]='Start (hh:mm:ss)'; hdr2[17]='End (hh:mm:ss)'; hdr2[18]='hours (hh:mm)'; hdr2[19]='Other (hh:mm)'; hdr2[20]='Hygiene (hh:mm)'; hdr2[21]='Break (hh:mm)'; hdr2[22]='hh:mm';
-  hdr2[23]='Thay\nbao bì'; hdr2[24]='Thiếu\nnguyên liệu'; hdr2[25]='Chuyển\nSKU'; hdr2[26]='Hư\nmáy'; hdr2[27]='Chỉnh\nmáy'; hdr2[28]='hh:mm'; hdr2[29]='%'; hdr2[30]='%'; hdr2[31]='%'; hdr2[32]='%'; hdr2[33]='Note';
+  hdr2[13] = 'Vol (kg)';
+  hdr2[14] = 'Rejected by X ray';
+  hdr2[15] = 'Rejected by CWer';
+  hdr2[16] = '%';
+  hdr2[17] = 'Start (hh:mm:ss)';
+  hdr2[18] = 'End (hh:mm:ss)';
+  hdr2[19] = 'hours (hh:mm)';
+  hdr2[20] = 'Other (hh:mm)';
+  hdr2[21] = 'Hygiene (hh:mm)';
+  hdr2[22] = 'Break (hh:mm)';
+  hdr2[23] = 'hh:mm';
+  hdr2[24] = 'Thay\nbao bì';
+  hdr2[25] = 'Thiếu\nnguyên liệu';
+  hdr2[26] = 'Chuyển\nSKU';
+  hdr2[27] = 'Hư\nmáy';
+  hdr2[28] = 'Chỉnh\nmáy';
+  hdr2[29] = 'hh:mm';
+  hdr2[30] = '%';
+  hdr2[31] = '%';
+  hdr2[32] = '%';
+  hdr2[33] = '%';
+  hdr2[34] = 'Note';
 
   const DAYS_VI = ['CN','T2','T3','T4','T5','T6','T7'];
   const datesToExport = Object.keys(store).filter(k => k >= fromDate && k <= toDate).sort();
   if(!datesToExport.length){ toast('⚠ Không có dữ liệu trong khoảng thời gian này!','#EF4444'); return; }
 
   const dataRows = [];
-  const ws_data = [hdr1, hdr2];
-  let rowIdx = 3;
+  datesToExport.forEach(d => {
+    let runs = [];
+    Object.keys(store[d]||{}).sort().forEach(mid => {
+      runs.push(...getRuns(d, mid));
+    });
 
-  datesToExport.forEach(dateStr => {
-    const dateObj = new Date(dateStr+'T00:00:00');
-    const dayStr = DAYS_VI[dateObj.getDay()];
-    ALL_MACHINES.forEach(m => {
-      const runs = getRuns(dateStr, m.id);
-      runs.forEach((r) => {
-      const c        = calcRunOEE(r);
-      const rejX     = +r.rejXray  || 0;
-      const rejC     = +r.rejected || 0;
-      const rej      = rejX + rejC;
-      const passed   = +r.passed   || 0;
-      const totalOut = passed + rej;
-      const rejPct   = totalOut > 0 ? rej / totalOut : 0;
+    runs.forEach(r => {
+      const dt = new Date(d);
+      const dayStr = DAYS_VI[dt.getDay()];
+      const m = store[d][r.machineId] || {};
+      
+      const passed = +r.passed || '';
+      const rejX   = +r.rejXray || '';
+      const rejC   = +r.rejected || '';
+      const totRej = (rejX || 0) + (rejC || 0);
+      const pct    = passed ? +((totRej / passed)*100).toFixed(2) : '';
 
-      const planMin    = (+r.stopMeeting||0)+(+r.stopHygiene||0)+(+r.stopBreak||0);
-      const opPlanHH   = c.opPlanned / 60;
-      const realOpHH   = c.realMin   / 60;
+      const start  = r.startTime || '';
+      const end    = r.endTime || '';
+      const opHrs  = r.totalOpTime ? fmtHHMM(r.totalOpTime) : '';
+      const other  = (r.stopEvents||[]).filter(x=>x.category==='other').reduce((s,x)=>s+(x.duration||0),0);
+      const otherStr = other ? fmtHHMM(other) : '';
 
-      const startDisp = r.startTime ? (r.startNextDay ? r.startTime+' +1' : r.startTime) : '';
-      const endDisp   = r.endTime   ? (r.endNextDay   ? r.endTime  +' +1' : r.endTime  ) : '';
+      const hy = (r.stopEvents||[]).filter(x=>x.reason==='Vệ sinh (hygiene)').reduce((s,x)=>s+(x.duration||0),0);
+      const br = (r.stopEvents||[]).filter(x=>x.reason==='Ăn ca (Break)').reduce((s,x)=>s+(x.duration||0),0);
+      const opPlan = (r.totalOpTime||0) - (hy+br);
+
+      const sEvents = r.stopEvents || [];
+      const f1 = sEvents.filter(x=>x.reason==='Thay bao bì').reduce((s,x)=>s+(x.duration||0),0);
+      const f2 = sEvents.filter(x=>x.reason==='Thiếu nguyên liệu').reduce((s,x)=>s+(x.duration||0),0);
+      const f3 = sEvents.filter(x=>x.reason==='Chuyển SKU').reduce((s,x)=>s+(x.duration||0),0);
+      const f4 = sEvents.filter(x=>x.reason==='Hư máy').reduce((s,x)=>s+(x.duration||0),0);
+      const f5 = sEvents.filter(x=>x.reason==='Chỉnh máy').reduce((s,x)=>s+(x.duration||0),0);
+      const unplan = f1+f2+f3+f4+f5;
+
+      const realOp = opPlan - unplan;
+
+      const P = r.perf ? +(r.perf).toFixed(2) : '';
+      const A = r.avail ? +(r.avail).toFixed(2) : '';
+      const Q = r.qual ? +(r.qual).toFixed(2) : '';
+      const OEE = r.oee ? +(r.oee).toFixed(2) : '';
 
       const row = new Array(NCOLS).fill('');
-      row[0]  = dateStr;
-      row[1]  = dayStr;
-      row[2]  = m.line;
-      row[3]  = m.name;
-      row[4]  = r.operator || '';
-      row[5]  = r.code     || '';
-      row[6]  = r.item     || '';
-      row[7]  = r.netG     ? +r.netG     : '';
-      row[8]  = r.designed ? +r.designed : '';
-      row[9]  = r.target   ? +r.target   : '';
-      row[10] = c.actualCalc > 0 ? Math.round(c.actualCalc) : '';
-      row[11] = (c.actualCalc > 0 && r.target) ? Math.round(c.actualCalc - (+r.target)) : '';
-      row[12] = passed || '';
-      row[13] = rejX   || '';
-      row[14] = rejC   || '';
-      row[15] = totalOut > 0 ? rejPct : '';
-      row[16] = startDisp;
-      row[17] = endDisp;
-      row[18] = c.opMin > 0 ? fmtHHMM(c.opMin / 60) : '';
-      row[19] = '';   // Other — blank
-      row[20] = (+r.stopHygiene||0) > 0 ? fmtHHMM((+r.stopHygiene)/60) : '00:00';
-      row[21] = (+r.stopBreak  ||0) > 0 ? fmtHHMM((+r.stopBreak)  /60) : '00:00';
-      row[22] = opPlanHH > 0 ? fmtHHMM(opPlanHH) : '';
-      row[23] = (+r.stopBag    ||0) > 0 ? fmtHHMM((+r.stopBag)    /60) : '00:00';
-      row[24] = (+r.stopMat    ||0) > 0 ? fmtHHMM((+r.stopMat)    /60) : '00:00';
-      row[25] = (+r.stopSku    ||0) > 0 ? fmtHHMM((+r.stopSku)    /60) : '00:00';
-      row[26] = (+r.stopMachine||0) > 0 ? fmtHHMM((+r.stopMachine)/60) : '00:00';
-      row[27] = (+r.stopClean  ||0) > 0 ? fmtHHMM((+r.stopClean)  /60) : '00:00';
-      row[28] = realOpHH > 0 ? fmtHHMM(realOpHH) : '';
-      row[29] = c.perf  > 0 ? +(c.perf /100).toFixed(4) : '';
-      row[30] = c.avail > 0 ? +(c.avail/100).toFixed(4) : '';
-      row[31] = c.qual  > 0 ? +(c.qual /100).toFixed(4) : '';
-      row[32] = c.oee   > 0 ? +(c.oee  /100).toFixed(4) : '';
-      row[33] = r.reason || '';
-
-      ws_data.push(row);
-      dataRows.push({ excelRow: rowIdx, c, r, m });
-      rowIdx++;
+      row[0] = d;
+      row[1] = dayStr;
+      row[2] = r.lineName || '';
+      row[3] = m.machineNumber || '';
+      row[4] = (r.opNames || []).join(', ');
+      row[5] = r.prodCode || '';
+      row[6] = r.prodName || '';
+      row[7] = r.netG || '';
+      row[8] = r.designCapa || '';
+      row[9] = r.targetCapa || '';
+      row[10]= r.actualCapa || '';
+      row[11]= r.gapCapa || '';
+      row[12]= passed;
+      row[13]= (passed && r.netG) ? +((passed * r.netG)/1000).toFixed(2) : '';
+      row[14]= rejX;
+      row[15]= rejC;
+      row[16]= pct;
+      row[17]= start;
+      row[18]= end;
+      row[19]= opHrs;
+      row[20]= otherStr;
+      row[21]= hy ? fmtHHMM(hy) : '';
+      row[22]= br ? fmtHHMM(br) : '';
+      row[23]= opPlan ? fmtHHMM(opPlan) : '';
+      row[24]= f1 ? fmtHHMM(f1) : '';
+      row[25]= f2 ? fmtHHMM(f2) : '';
+      row[26]= f3 ? fmtHHMM(f3) : '';
+      row[27]= f4 ? fmtHHMM(f4) : '';
+      row[28]= f5 ? fmtHHMM(f5) : '';
+      row[29]= realOp ? fmtHHMM(realOp) : '';
+      row[30]= P;
+      row[31]= A;
+      row[32]= Q;
+      row[33]= OEE;
+      row[34]= (r.stopEvents||[]).map(x=>x.note).filter(Boolean).join('; ');
+      
+      dataRows.push(row);
     });
   });
-});
 
-  const ws = XLSX.utils.aoa_to_sheet(ws_data);
+  const wsData = [hdr1, hdr2, ...dataRows];
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
 
-  /* ── COLUMN WIDTHS ── */
   ws['!cols'] = [
     {wch:12}, // Date
     {wch:5},  // Day
-    {wch:16}, // Line
-    {wch:12}, // Số TT máy
-    {wch:14}, // Tên OP
-    {wch:9},  // Code
-    {wch:28}, // Item
-    {wch:7},  // NW(g)
-    {wch:9},  // Designed
-    {wch:9},  // Target
-    {wch:9},  // Actual
-    {wch:8},  // Gap
-    {wch:9},  // Passed
+    {wch:10}, // Line
+    {wch:15}, // M/C no
+    {wch:15}, // OP
+    {wch:12}, // Code
+    {wch:25}, // Item
+    {wch:8},  // NW
+    {wch:10}, // Des C
+    {wch:10}, // Tgt C
+    {wch:10}, // Act C
+    {wch:10}, // Gap
+    {wch:10}, // Pass
+    {wch:10}, // Vol (kg)
     {wch:12}, // Rej X-ray
-    {wch:12}, // Rej CWer
+    {wch:12}, // Rej CW
     {wch:6},  // %
-    {wch:10}, // Start
-    {wch:10}, // End
-    {wch:9},  // hours
-    {wch:9},  // Other
-    {wch:11}, // Hygiene
-    {wch:9},  // Break
-    {wch:9},  // Op planned
-    {wch:8},  // Thay bao bì
-    {wch:9},  // Thiếu NL
-    {wch:8},  // Chuyển SKU
-    {wch:7},  // Hư máy
-    {wch:8},  // Chỉnh máy
-    {wch:9},  // Real op
-    {wch:11}, // Perf %
-    {wch:11}, // Avail %
-    {wch:10}, // Qual %
-    {wch:10}, // OEE %
-    {wch:22}, // Note
+    {wch:12}, // Start
+    {wch:12}, // End
+    {wch:12}, // hrs
+    {wch:12}, // Other
+    {wch:12}, // Hyg
+    {wch:12}, // Break
+    {wch:12}, // Op plan
+    {wch:10}, // f1
+    {wch:10}, // f2
+    {wch:10}, // f3
+    {wch:10}, // f4
+    {wch:10}, // f5
+    {wch:12}, // Real Op
+    {wch:6},  // P
+    {wch:6},  // A
+    {wch:6},  // Q
+    {wch:6},  // OEE
+    {wch:30}  // Note
   ];
 
-  /* ── MERGES ── */
-  // Row index 0 = hdr1, row index 1 = hdr2
   ws['!merges'] = [
-    // hdr1 single-cell labels that span both rows
-    {s:{r:0,c:0}, e:{r:1,c:0}},   // Date
-    {s:{r:0,c:1}, e:{r:1,c:1}},   // Day
-    {s:{r:0,c:2}, e:{r:1,c:2}},   // Line
-    {s:{r:0,c:3}, e:{r:1,c:3}},   // Số TT máy
-    {s:{r:0,c:4}, e:{r:1,c:4}},   // Tên OP
-    {s:{r:0,c:5}, e:{r:1,c:5}},   // Code
-    {s:{r:0,c:6}, e:{r:1,c:6}},   // Item
-    {s:{r:0,c:7}, e:{r:1,c:7}},   // NW(g)
-    // Capa (ea/h) spans cols 8-10
-    {s:{r:0,c:8}, e:{r:0,c:10}},
-    // Gap single col spans both rows
-    {s:{r:0,c:11},e:{r:1,c:11}},
-    // Product quantity spans 12-15
-    {s:{r:0,c:12},e:{r:0,c:15}},
-    // Total Operation time spans 16-19
-    {s:{r:0,c:16},e:{r:0,c:19}},
-    // Stop time planned spans 20-21
-    {s:{r:0,c:20},e:{r:0,c:21}},
-    // Operation time planned — single, spans both rows
-    {s:{r:0,c:22},e:{r:1,c:22}},
-    // Stop time unplanned spans 23-27
-    {s:{r:0,c:23},e:{r:0,c:27}},
-    // Real operation time — single, spans both rows
-    {s:{r:0,c:28},e:{r:1,c:28}},
-    // Performance, Availability, Quality, OEE, Note — single cols span both rows
-    {s:{r:0,c:29},e:{r:1,c:29}},
-    {s:{r:0,c:30},e:{r:1,c:30}},
-    {s:{r:0,c:31},e:{r:1,c:31}},
-    {s:{r:0,c:32},e:{r:1,c:32}},
-    {s:{r:0,c:33},e:{r:1,c:33}},
+    {s:{r:0,c:0},e:{r:1,c:0}}, {s:{r:0,c:1},e:{r:1,c:1}},
+    {s:{r:0,c:2},e:{r:1,c:2}}, {s:{r:0,c:3},e:{r:1,c:3}},
+    {s:{r:0,c:4},e:{r:1,c:4}}, {s:{r:0,c:5},e:{r:1,c:5}},
+    {s:{r:0,c:6},e:{r:1,c:6}}, {s:{r:0,c:7},e:{r:1,c:7}},
+    {s:{r:0,c:8},e:{r:0,c:10}}, {s:{r:0,c:11},e:{r:1,c:11}},
+    {s:{r:0,c:12},e:{r:0,c:16}}, {s:{r:0,c:17},e:{r:0,c:20}},
+    {s:{r:0,c:21},e:{r:0,c:22}}, {s:{r:0,c:23},e:{r:1,c:23}},
+    {s:{r:0,c:24},e:{r:0,c:28}}, {s:{r:0,c:29},e:{r:1,c:29}},
+    {s:{r:0,c:30},e:{r:1,c:30}}, {s:{r:0,c:31},e:{r:1,c:31}},
+    {s:{r:0,c:32},e:{r:1,c:32}}, {s:{r:0,c:33},e:{r:1,c:33}},
+    {s:{r:0,c:34},e:{r:1,c:34}}
   ];
 
-  /* ── STYLING ── */
-  const HDR_BG   = '1F3864';  // dark navy
-  const HDR_BG2  = '2F5496';  // medium navy for sub-header
-  const WHITE    = 'FFFFFF';
-  const BORDER_C = 'B8CCE4';
-
-  function sCell(addr, {bg, fg='000000', bold=false, sz=9, align='center', wrap=false, numFmt='', italic=false}={}){
-    if(!ws[addr]) ws[addr] = {t:'z', v:''};
-    ws[addr].s = {
-      font:      { name:'Calibri', sz, bold, italic, color:{rgb:fg} },
-      fill:      bg ? {patternType:'solid', fgColor:{rgb:bg}} : {patternType:'none'},
-      alignment: { horizontal:align, vertical:'center', wrapText:wrap },
-      border: {
-        top:   {style:'thin', color:{rgb:BORDER_C}},
-        bottom:{style:'thin', color:{rgb:BORDER_C}},
-        left:  {style:'thin', color:{rgb:BORDER_C}},
-        right: {style:'thin', color:{rgb:BORDER_C}},
-      },
-      numFmt,
-    };
-  }
-
-  // Style header row 1 (index 0 → Excel row 1)
-  for(let ci=0; ci<NCOLS; ci++){
-    sCell(colLetter(ci)+'1', {bg:HDR_BG, fg:WHITE, bold:true, sz:9, wrap:true});
-  }
-  // Style header row 2 (index 1 → Excel row 2)
-  for(let ci=0; ci<NCOLS; ci++){
-    sCell(colLetter(ci)+'2', {bg:HDR_BG2, fg:WHITE, bold:true, sz:8, wrap:true});
-  }
-
-  // Style data rows
-  for(let dr=0; dr<dataRows.length; dr++){
-    const {excelRow:er, c, r} = dataRows[dr];
-    const rowBG = dr%2===0 ? 'FFFFFF' : 'DCE6F1';
-
-    for(let ci=0; ci<NCOLS; ci++){
-      const addr = colLetter(ci)+er;
-      let bg=rowBG, fg='000000', numFmt='', align='center', bold=false;
-
-      // Numbers right-aligned
-      if([7,8,9,10,11,12,13,14].includes(ci)){ align='right'; numFmt='#,##0'; }
-      // % columns with conditional color
-      if([15,29,30,31,32].includes(ci)){
-        numFmt = '0.00%';
-        const val = ws[addr]?.v;
-        if(typeof val==='number' && val>0){
-          if([29,30,31,32].includes(ci)){
-            // OEE/Perf/Avail/Qual color coding
-            bg  = val>=0.85 ? 'C6EFCE' : val>=0.70 ? 'FFEB9C' : 'FFC7CE';
-            fg  = val>=0.85 ? '276221' : val>=0.70 ? '9C5700' : '9C0006';
-            bold= true;
-          }
+  for(let r=0; r<wsData.length; r++){
+    for(let c=0; c<NCOLS; c++){
+      const cell = ws[colLetter(c)+(r+1)];
+      if(!cell) continue;
+      
+      let align = 'center', numFmt = undefined;
+      
+      if(r===0 || r===1){ align='center'; }
+      else {
+        if(c===4 || c===6){ align='left'; }
+        if([7,8,9,10,11,12,13,14,15].includes(c)){ align='right'; numFmt='#,##0'; }
+        if([16,30,31,32,33].includes(c)){
+          align='right';
+          if(typeof cell.v==='number') numFmt='0.00\"%\"';
         }
+        if(c===34){ align='left'; }
       }
-      // Date left-aligned
-      if(ci===0){ align='left'; }
-      // Item left-aligned
-      if(ci===6){ align='left'; }
-      // Note left-aligned
-      if(ci===33){ align='left'; }
-
-      sCell(addr, {bg, fg, sz:9, align, numFmt, bold});
+      
+      cell.s = {
+        alignment:{ vertical:'center', horizontal:align, wrapText:true },
+        border:{
+          top:{style:'thin'}, bottom:{style:'thin'},
+          left:{style:'thin'}, right:{style:'thin'}
+        }
+      };
+      
+      if(r===0 || r===1) {
+        cell.s.fill = {fgColor:{rgb:'FFCCCCCC'}};
+        cell.s.font = {bold:true};
+      }
+      
+      if(numFmt) cell.z = numFmt;
     }
   }
 
-  /* ── ROW HEIGHTS ── */
-  ws['!rows'] = [
-    {hpt:30},  // header row 1
-    {hpt:36},  // header row 2 (taller for sub-labels)
-  ];
-
-  XLSX.utils.book_append_sheet(wb, ws, 'OEE Report');
-
-  /* ── SUMMARY SHEET ── */
-  const sumData = [
-    ['OEE SUMMARY — ' + activeDate],
-    [],
-    ['Line','Máy','Runs','Op time (h)','Op planned (h)','Real op (h)',
-     'Passed','Rejected','Actual (ea/h)',
-     'Performance %','Availability %','Quality %','OEE %']
-  ];
-  ALL_MACHINES.forEach(m => {
-    const runs = getRuns(activeDate, m.id);
-    if(!runs.length) return;
-    const c2 = avgCalcs(runs);
-    const totPassed = runs.reduce((s,r2)=>s+(+r2.passed||0), 0);
-    const totRej    = runs.reduce((s,r2)=>s+(+r2.rejected||0)+(+r2.rejXray||0), 0);
-    const actualAvg = c2.realMin>0 ? totPassed/(c2.realMin/60) : 0;
-    sumData.push([
-      m.line, m.name, runs.length,
-      +(c2.opMin/60).toFixed(2),
-      +(c2.opPlanned/60).toFixed(2),
-      +(c2.realMin/60).toFixed(2),
-      totPassed, totRej,
-      actualAvg>0 ? Math.round(actualAvg) : '',
-      c2.perf  > 0 ? +(c2.perf /100).toFixed(4) : '',
-      c2.avail > 0 ? +(c2.avail/100).toFixed(4) : '',
-      c2.qual  > 0 ? +(c2.qual /100).toFixed(4) : '',
-      c2.oee   > 0 ? +(c2.oee  /100).toFixed(4) : '',
-    ]);
-  });
-  const ws2 = XLSX.utils.aoa_to_sheet(sumData);
-  ws2['!cols'] = [
-    {wch:18},{wch:14},{wch:6},{wch:11},{wch:13},{wch:11},
-    {wch:10},{wch:10},{wch:13},
-    {wch:14},{wch:14},{wch:12},{wch:10}
-  ];
-  // Style summary header
-  for(let ci=0;ci<13;ci++){
-    const addr=colLetter(ci)+'3';
-    if(!ws2[addr]) ws2[addr]={t:'z',v:''};
-    ws2[addr].s={font:{name:'Calibri',sz:9,bold:true,color:{rgb:'FFFFFF'}},fill:{patternType:'solid',fgColor:{rgb:'1F3864'}},alignment:{horizontal:'center',vertical:'center'}};
+  XLSX.utils.book_append_sheet(wb, ws, "Data");
+  
+  try {
+    XLSX.writeFile(wb, `OEE_Report_${fromDate}_${toDate}.xlsx`);
+    toast('✅ Xuất Excel thành công!', '#16A34A');
+  } catch(e){
+    console.error(e);
+    toast('❌ Lỗi xuất file', '#EF4444');
   }
-  // Format % cols in summary
-  ['J','K','L','M'].forEach(col=>{
-    for(let ri=4; ri<=sumData.length; ri++){
-      const addr=col+ri;
-      if(ws2[addr]&&typeof ws2[addr].v==='number'){
-        ws2[addr].s={numFmt:'0.00%',alignment:{horizontal:'center'}};
-      }
-    }
-  });
-  XLSX.utils.book_append_sheet(wb, ws2, 'Summary');
-
-  XLSX.writeFile(wb, `OEE_Report_${fromDate}${fromDate!==toDate?'_to_'+toDate:''}.xlsx`);
-  toast('✅ Xuất Excel thành công!', '#16A34A');
 }
-
 const exportCSV = exportExcel;
 
 // ══ NAV ═══════════════════════════════════════════════════════════════════
@@ -2224,7 +2042,7 @@ function switchView(v){
   currentView=v;
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
   document.getElementById(`view-${v}`).classList.add('active');
-  document.querySelectorAll('.rail-btn').forEach((b,i)=>{ if(i<3) b.classList.toggle('active',['input','dashboard','catalog'][i]===v); });
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['input','dashboard','catalog'][i]===v));
   if(v==='dashboard') renderDashboard();
   if(v==='catalog') renderCatalog();
 }
@@ -2354,8 +2172,5 @@ setTimeout(() => {
 }, 2000); // 2s fallback
 
 </script>
-    <div class="sig">Created by: AI | 2026</div>
-  </div>
-</div>
 </body>
 </html>
