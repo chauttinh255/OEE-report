@@ -483,7 +483,144 @@ table.dt tr:hover td{background:var(--surface2)}
 }
 .fg-capa { grid-template-columns:1fr 1fr auto 1fr 1fr 1fr 1fr; }
 .fg-time { grid-template-columns:auto auto 1fr 1fr 1fr; }
-</style>
+
+/* ══ NAVY EXECUTIVE BI SYSTEM (DASHBOARD ONLY) ══ */
+#view-dashboard {
+  --navy-900:#1A3260; --navy-800:#1F3C70; --navy-700:#2E4E85;
+  --blue-600:#50648C; --steel-500:#788CAA; --steel-400:#96A0B4;
+  --steel-300:#AAB4C8; --steel-200:#BEC8D2;
+  --canvas:#EAEAEA; --shell:#F7F8FA; --panel:#F4F4F4; --surface:#FFFFFF; --line:#D6DBE3;
+  --text-strong:#1A3260; --text-body:#3E4A5C; --text-muted:#7A8494; --text-invert:#FFFFFF;
+  --delta-up:#4E8A5F; --delta-down:#B84A38;
+  --r-shell:40px; --r-card:14px; --r-panel:12px; --r-rail:18px; --r-pill:999px; --r-badge:4px;
+  --shadow-shell:0 18px 40px rgba(26,50,96,.10);
+  --shadow-lift:5px 6px 0 rgba(31,60,112,.90);
+  --font-display:'Montserrat', 'Poppins', sans-serif;
+  --font-ui:'Inter', 'Segoe UI', sans-serif;
+  
+  background: var(--canvas);
+  padding: 40px;
+  min-height: 100vh;
+  font-family: var(--font-ui);
+}
+
+#view-dashboard .navy-shell {
+  background: var(--shell);
+  border-radius: var(--r-shell);
+  box-shadow: var(--shadow-shell);
+  padding: 30px 40px;
+  position: relative;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+#view-dashboard .page-header {
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 16px;
+}
+
+#view-dashboard .page-title {
+  font-family: var(--font-display);
+  font-size: 32px;
+  color: var(--navy-900);
+  font-weight: 800;
+}
+#view-dashboard .page-title span {
+  font-weight: 400;
+  color: var(--blue-600);
+}
+
+#view-dashboard .kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+#view-dashboard .kpi-card {
+  background: var(--surface);
+  border-radius: var(--r-card);
+  padding: 20px 16px;
+  text-align: center;
+  box-shadow: var(--shadow-lift);
+  border: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+#view-dashboard .kpi-card-title {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+#view-dashboard .kpi-val {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 34px;
+  color: var(--navy-800);
+  line-height: 1;
+}
+
+#view-dashboard .kpi-spark {
+  margin-top: 12px;
+  height: 40px;
+}
+
+#view-dashboard .prev-line {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 8px;
+  font-family: var(--font-ui);
+}
+
+#view-dashboard .gantt-section, #view-dashboard .detail-section {
+  background: var(--surface);
+  border-radius: var(--r-panel);
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(26,50,96,0.05);
+  border: 1px solid var(--line);
+  margin-bottom: 20px;
+}
+
+#view-dashboard .gantt-title {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--navy-900);
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+#view-dashboard .op-bar-bg, #view-dashboard .mach-bar-bg {
+  background: var(--panel);
+  border: none;
+  border-radius: var(--r-pill);
+}
+
+#view-dashboard .op-bar-fill, #view-dashboard .mach-bar-seg {
+  border-radius: var(--r-pill);
+}
+
+#view-dashboard table.dt th {
+  background: var(--navy-800);
+  color: var(--text-invert);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  border: none;
+}
+#view-dashboard table.dt td {
+  color: var(--text-body);
+  border-bottom: 1px solid var(--line);
+}
+\n</style>
 </head>
 <body>
 
@@ -1492,7 +1629,11 @@ function renderDashboard(){
     document.getElementById(`prev-${k}`).textContent=pct(prev*0.93);
   });
 
-  document.getElementById('ok-passed').textContent  =totalPassed.toLocaleString();
+  document.getElementById('ok-passed').textContent = totalPassed.toLocaleString();
+  const selOee = document.getElementById('navy-oee'); if(selOee) selOee.textContent = (avgOEE === 0 && !totalPassed) ? '0%' : avgOEE + '%';
+  const selAvail = document.getElementById('navy-avail'); if(selAvail) selAvail.textContent = (avgAvail === 0 && !totalPassed) ? '0%' : avgAvail + '%';
+  const selPerf = document.getElementById('navy-perf'); if(selPerf) selPerf.textContent = (avgPerf === 0 && !totalPassed) ? '0%' : avgPerf + '%';
+  const selQual = document.getElementById('navy-qual'); if(selQual) selQual.textContent = (avgQual === 0 && !totalPassed) ? '0%' : avgQual + '%';
   document.getElementById('ok-rej').textContent     =totalRejected.toLocaleString();
   document.getElementById('ok-unplan').textContent  =totalUnplan+'ph';
   document.getElementById('ok-plan').textContent    =totalPlan+'ph';
@@ -1775,11 +1916,60 @@ function exportExcel(fromDate=activeDate, toDate=activeDate){
   if(typeof XLSX==='undefined'){ toast('⚠ SheetJS chưa tải, thử lại','#D97706'); return; }
 
   const wb = XLSX.utils.book_new();
-  const NCOLS = 35;
+
+  /* ══════════════════════════════════════════════════════════════════════
+     COLUMN MAP (0-indexed) — matches the image exactly
+     0  Date
+     1  Day
+     2  Line
+     3  Số thứ tự máy
+     4  Tên OP
+     5  Code
+     6  Item
+     7  NW (g)
+     -- Capa (ea/h) -------
+     8  Designed
+     9  Target
+     10 Actual
+     -- Gap ---------------
+     11 Gap (ea/h)
+     -- Product quantity --
+     12 Passed
+     13 Rejected by X ray
+     14 Rejected by CWer
+     15 %
+     -- Total Operation time --
+     16 Start (hh:mm:ss)
+     17 End (hh:mm:ss)
+     18 hours (hh:mm)
+     19 Other (hh:mm)
+     -- Stop time planned --
+     20 Hygiene (hh:mm)
+     21 Break (hh:mm)
+     -- Operation time planned --
+     22 hh:mm
+     -- Stop time unplanned --
+     23 Thay bao bì
+     24 Thiếu nguyên liệu
+     25 Chuyển SKU
+     26 Hư máy
+     27 Chỉnh máy
+     -- Real operation time --
+     28 hh:mm
+     29 Performance (P)  %
+     30 Availability (A) %
+     31 Quality (Q)      %
+     32 OEE              %
+     33 Note
+     TOTAL: 34 columns (A..AH)
+  ══════════════════════════════════════════════════════════════════════ */
+
+  const NCOLS = 34;
   const colLetter = i => i < 26
     ? String.fromCharCode(65+i)
     : String.fromCharCode(64+Math.floor(i/26)) + String.fromCharCode(65+(i%26));
 
+  /* ── Helper: hh:mm string from fractional hours ── */
   const fmtHHMM = h => {
     if(!h && h!==0) return '';
     const neg=h<0; h=Math.abs(h);
@@ -1787,6 +1977,7 @@ function exportExcel(fromDate=activeDate, toDate=activeDate){
     return `${neg?'-':''}${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
   };
 
+  /* ── HEADER ROW 1: group labels (row index 0) ── */
   const hdr1 = new Array(NCOLS).fill('');
   hdr1[0]  = 'Date';
   hdr1[1]  = 'Day';
@@ -1796,20 +1987,21 @@ function exportExcel(fromDate=activeDate, toDate=activeDate){
   hdr1[5]  = 'Code';
   hdr1[6]  = 'Item';
   hdr1[7]  = 'NW (g)';
-  hdr1[8]  = 'Capa (ea/h)';
+  hdr1[8]  = 'Capa (ea/h)';   // merge 8-10
   hdr1[11] = 'Gap (ea/h)';
-  hdr1[12] = 'Product quantity';
-  hdr1[17] = 'Total Operation time';
-  hdr1[21] = 'Stop time planned';
-  hdr1[23] = 'Operation\ntime planned';
-  hdr1[24] = 'Stop time unplanned';
-  hdr1[29] = 'Real\noperation time';
-  hdr1[30] = 'Performance\n(P)';
-  hdr1[31] = 'Availability\n(A)';
-  hdr1[32] = 'Quality\n(Q)';
-  hdr1[33] = 'OEE';
-  hdr1[34] = 'Note';
+  hdr1[12] = 'Product quantity';  // merge 12-15
+  hdr1[16] = 'Total Operation time'; // merge 16-19
+  hdr1[20] = 'Stop time planned';    // merge 20-21
+  hdr1[22] = 'Operation\ntime planned'; // single
+  hdr1[23] = 'Stop time unplanned';  // merge 23-27
+  hdr1[28] = 'Real\noperation time'; // single
+  hdr1[29] = 'Performance\n(P)';
+  hdr1[30] = 'Availability\n(A)';
+  hdr1[31] = 'Quality\n(Q)';
+  hdr1[32] = 'OEE';
+  hdr1[33] = 'Note';
 
+  /* ── HEADER ROW 2: sub-labels (row index 1) ── */
   const hdr2 = new Array(NCOLS).fill('');
   hdr2[0]  = 'Date';
   hdr2[1]  = 'Day';
@@ -1824,217 +2016,303 @@ function exportExcel(fromDate=activeDate, toDate=activeDate){
   hdr2[10] = 'Actual';
   hdr2[11] = 'Gap (ea/h)';
   hdr2[12] = 'Passed';
-  hdr2[13] = 'Vol (kg)';
-  hdr2[14] = 'Rejected by X ray';
-  hdr2[15] = 'Rejected by CWer';
-  hdr2[16] = '%';
-  hdr2[17] = 'Start (hh:mm:ss)';
-  hdr2[18] = 'End (hh:mm:ss)';
-  hdr2[19] = 'hours (hh:mm)';
-  hdr2[20] = 'Other (hh:mm)';
-  hdr2[21] = 'Hygiene (hh:mm)';
-  hdr2[22] = 'Break (hh:mm)';
-  hdr2[23] = 'hh:mm';
-  hdr2[24] = 'Thay\nbao bì';
-  hdr2[25] = 'Thiếu\nnguyên liệu';
-  hdr2[26] = 'Chuyển\nSKU';
-  hdr2[27] = 'Hư\nmáy';
-  hdr2[28] = 'Chỉnh\nmáy';
-  hdr2[29] = 'hh:mm';
-  hdr2[30] = '%';
-  hdr2[31] = '%';
-  hdr2[32] = '%';
-  hdr2[33] = '%';
-  hdr2[34] = 'Note';
+  hdr2[13] = 'Rejected by X ray';
+  hdr2[14] = 'Rejected by CWer';
+  hdr2[15] = '%';
+  hdr2[16] = 'Start (hh:mm:ss)';
+  hdr2[17] = 'End (hh:mm:ss)';
+  hdr2[18] = 'hours (hh:mm)';
+  hdr2[19] = 'Other (hh:mm)';
+  hdr2[20] = 'Hygiene (hh:mm)';
+  hdr2[21] = 'Break (hh:mm)';
+  hdr2[22] = 'hh:mm';
+  hdr2[23] = 'Thay\nbao bì';
+  hdr2[24] = 'Thiếu\nnguyên liệu';
+  hdr2[25] = 'Chuyển\nSKU';
+  hdr2[26] = 'Hư\nmáy';
+  hdr2[27] = 'Chỉnh\nmáy';
+  hdr2[0]='Date'; hdr2[1]='Day'; hdr2[2]='Line'; hdr2[3]='Số thứ tự máy'; hdr2[4]='Tên OP'; hdr2[5]='Code'; hdr2[6]='Item'; hdr2[7]='NW (g)';
+  hdr2[8]='Designed'; hdr2[9]='Target'; hdr2[10]='Actual'; hdr2[11]='Gap (ea/h)'; hdr2[12]='Passed'; hdr2[13]='Rejected by X ray'; hdr2[14]='Rejected by CWer'; hdr2[15]=' %';
+  hdr2[16]='Start (hh:mm:ss)'; hdr2[17]='End (hh:mm:ss)'; hdr2[18]='hours (hh:mm)'; hdr2[19]='Other (hh:mm)'; hdr2[20]='Hygiene (hh:mm)'; hdr2[21]='Break (hh:mm)'; hdr2[22]='hh:mm';
+  hdr2[23]='Thay\nbao bì'; hdr2[24]='Thiếu\nnguyên liệu'; hdr2[25]='Chuyển\nSKU'; hdr2[26]='Hư\nmáy'; hdr2[27]='Chỉnh\nmáy'; hdr2[28]='hh:mm'; hdr2[29]='%'; hdr2[30]='%'; hdr2[31]='%'; hdr2[32]='%'; hdr2[33]='Note';
 
   const DAYS_VI = ['CN','T2','T3','T4','T5','T6','T7'];
-  const datesToExport = Object.keys(store).filter(k => k >= fromDate && k <= toDate).sort();
+  const datesToExport = Object.keys(DB).filter(k => k >= fromDate && k <= toDate).sort();
   if(!datesToExport.length){ toast('⚠ Không có dữ liệu trong khoảng thời gian này!','#EF4444'); return; }
 
   const dataRows = [];
-  datesToExport.forEach(d => {
-    let runs = [];
-    Object.keys(store[d]||{}).sort().forEach(mid => {
-      runs.push(...getRuns(d, mid));
-    });
+  const ws_data = [hdr1, hdr2];
+  let rowIdx = 3;
 
-    runs.forEach(r => {
-      const dt = new Date(d);
-      const dayStr = DAYS_VI[dt.getDay()];
-      const m = store[d][r.machineId] || {};
-      
-      const passed = +r.passed || '';
-      const rejX   = +r.rejXray || '';
-      const rejC   = +r.rejected || '';
-      const totRej = (rejX || 0) + (rejC || 0);
-      const pct    = passed ? +((totRej / passed)*100).toFixed(2) : '';
+  datesToExport.forEach(dateStr => {
+    const dateObj = new Date(dateStr+'T00:00:00');
+    const dayStr = DAYS_VI[dateObj.getDay()];
+    ALL_MACHINES.forEach(m => {
+      const runs = getRuns(dateStr, m.id);
+      runs.forEach((r) => {
+      const c        = calcRunOEE(r);
+      const rejX     = +r.rejXray  || 0;
+      const rejC     = +r.rejected || 0;
+      const rej      = rejX + rejC;
+      const passed   = +r.passed   || 0;
+      const totalOut = passed + rej;
+      const rejPct   = totalOut > 0 ? rej / totalOut : 0;
 
-      const start  = r.startTime || '';
-      const end    = r.endTime || '';
-      const opHrs  = r.totalOpTime ? fmtHHMM(r.totalOpTime) : '';
-      const other  = (r.stopEvents||[]).filter(x=>x.category==='other').reduce((s,x)=>s+(x.duration||0),0);
-      const otherStr = other ? fmtHHMM(other) : '';
+      const planMin    = (+r.stopMeeting||0)+(+r.stopHygiene||0)+(+r.stopBreak||0);
+      const opPlanHH   = c.opPlanned / 60;
+      const realOpHH   = c.realMin   / 60;
 
-      const hy = (r.stopEvents||[]).filter(x=>x.reason==='Vệ sinh (hygiene)').reduce((s,x)=>s+(x.duration||0),0);
-      const br = (r.stopEvents||[]).filter(x=>x.reason==='Ăn ca (Break)').reduce((s,x)=>s+(x.duration||0),0);
-      const opPlan = (r.totalOpTime||0) - (hy+br);
-
-      const sEvents = r.stopEvents || [];
-      const f1 = sEvents.filter(x=>x.reason==='Thay bao bì').reduce((s,x)=>s+(x.duration||0),0);
-      const f2 = sEvents.filter(x=>x.reason==='Thiếu nguyên liệu').reduce((s,x)=>s+(x.duration||0),0);
-      const f3 = sEvents.filter(x=>x.reason==='Chuyển SKU').reduce((s,x)=>s+(x.duration||0),0);
-      const f4 = sEvents.filter(x=>x.reason==='Hư máy').reduce((s,x)=>s+(x.duration||0),0);
-      const f5 = sEvents.filter(x=>x.reason==='Chỉnh máy').reduce((s,x)=>s+(x.duration||0),0);
-      const unplan = f1+f2+f3+f4+f5;
-
-      const realOp = opPlan - unplan;
-
-      const P = r.perf ? +(r.perf).toFixed(2) : '';
-      const A = r.avail ? +(r.avail).toFixed(2) : '';
-      const Q = r.qual ? +(r.qual).toFixed(2) : '';
-      const OEE = r.oee ? +(r.oee).toFixed(2) : '';
+      const startDisp = r.startTime ? (r.startNextDay ? r.startTime+' +1' : r.startTime) : '';
+      const endDisp   = r.endTime   ? (r.endNextDay   ? r.endTime  +' +1' : r.endTime  ) : '';
 
       const row = new Array(NCOLS).fill('');
-      row[0] = d;
-      row[1] = dayStr;
-      row[2] = r.lineName || '';
-      row[3] = m.machineNumber || '';
-      row[4] = (r.opNames || []).join(', ');
-      row[5] = r.prodCode || '';
-      row[6] = r.prodName || '';
-      row[7] = r.netG || '';
-      row[8] = r.designCapa || '';
-      row[9] = r.targetCapa || '';
-      row[10]= r.actualCapa || '';
-      row[11]= r.gapCapa || '';
-      row[12]= passed;
-      row[13]= (passed && r.netG) ? +((passed * r.netG)/1000).toFixed(2) : '';
-      row[14]= rejX;
-      row[15]= rejC;
-      row[16]= pct;
-      row[17]= start;
-      row[18]= end;
-      row[19]= opHrs;
-      row[20]= otherStr;
-      row[21]= hy ? fmtHHMM(hy) : '';
-      row[22]= br ? fmtHHMM(br) : '';
-      row[23]= opPlan ? fmtHHMM(opPlan) : '';
-      row[24]= f1 ? fmtHHMM(f1) : '';
-      row[25]= f2 ? fmtHHMM(f2) : '';
-      row[26]= f3 ? fmtHHMM(f3) : '';
-      row[27]= f4 ? fmtHHMM(f4) : '';
-      row[28]= f5 ? fmtHHMM(f5) : '';
-      row[29]= realOp ? fmtHHMM(realOp) : '';
-      row[30]= P;
-      row[31]= A;
-      row[32]= Q;
-      row[33]= OEE;
-      row[34]= (r.stopEvents||[]).map(x=>x.note).filter(Boolean).join('; ');
-      
-      dataRows.push(row);
+      row[0]  = dateStr;
+      row[1]  = dayStr;
+      row[2]  = m.line;
+      row[3]  = m.name;
+      row[4]  = r.operator || '';
+      row[5]  = r.code     || '';
+      row[6]  = r.item     || '';
+      row[7]  = r.netG     ? +r.netG     : '';
+      row[8]  = r.designed ? +r.designed : '';
+      row[9]  = r.target   ? +r.target   : '';
+      row[10] = c.actualCalc > 0 ? Math.round(c.actualCalc) : '';
+      row[11] = (c.actualCalc > 0 && r.target) ? Math.round(c.actualCalc - (+r.target)) : '';
+      row[12] = passed || '';
+      row[13] = rejX   || '';
+      row[14] = rejC   || '';
+      row[15] = totalOut > 0 ? rejPct : '';
+      row[16] = startDisp;
+      row[17] = endDisp;
+      row[18] = c.opMin > 0 ? fmtHHMM(c.opMin / 60) : '';
+      row[19] = '';   // Other — blank
+      row[20] = (+r.stopHygiene||0) > 0 ? fmtHHMM((+r.stopHygiene)/60) : '00:00';
+      row[21] = (+r.stopBreak  ||0) > 0 ? fmtHHMM((+r.stopBreak)  /60) : '00:00';
+      row[22] = opPlanHH > 0 ? fmtHHMM(opPlanHH) : '';
+      row[23] = (+r.stopBag    ||0) > 0 ? fmtHHMM((+r.stopBag)    /60) : '00:00';
+      row[24] = (+r.stopMat    ||0) > 0 ? fmtHHMM((+r.stopMat)    /60) : '00:00';
+      row[25] = (+r.stopSku    ||0) > 0 ? fmtHHMM((+r.stopSku)    /60) : '00:00';
+      row[26] = (+r.stopMachine||0) > 0 ? fmtHHMM((+r.stopMachine)/60) : '00:00';
+      row[27] = (+r.stopClean  ||0) > 0 ? fmtHHMM((+r.stopClean)  /60) : '00:00';
+      row[28] = realOpHH > 0 ? fmtHHMM(realOpHH) : '';
+      row[29] = c.perf  > 0 ? +(c.perf /100).toFixed(4) : '';
+      row[30] = c.avail > 0 ? +(c.avail/100).toFixed(4) : '';
+      row[31] = c.qual  > 0 ? +(c.qual /100).toFixed(4) : '';
+      row[32] = c.oee   > 0 ? +(c.oee  /100).toFixed(4) : '';
+      row[33] = r.reason || '';
+
+      ws_data.push(row);
+      dataRows.push({ excelRow: rowIdx, c, r, m });
+      rowIdx++;
     });
   });
+});
 
-  const wsData = [hdr1, hdr2, ...dataRows];
-  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  const ws = XLSX.utils.aoa_to_sheet(ws_data);
 
+  /* ── COLUMN WIDTHS ── */
   ws['!cols'] = [
     {wch:12}, // Date
     {wch:5},  // Day
-    {wch:10}, // Line
-    {wch:15}, // M/C no
-    {wch:15}, // OP
-    {wch:12}, // Code
-    {wch:25}, // Item
-    {wch:8},  // NW
-    {wch:10}, // Des C
-    {wch:10}, // Tgt C
-    {wch:10}, // Act C
-    {wch:10}, // Gap
-    {wch:10}, // Pass
-    {wch:10}, // Vol (kg)
+    {wch:16}, // Line
+    {wch:12}, // Số TT máy
+    {wch:14}, // Tên OP
+    {wch:9},  // Code
+    {wch:28}, // Item
+    {wch:7},  // NW(g)
+    {wch:9},  // Designed
+    {wch:9},  // Target
+    {wch:9},  // Actual
+    {wch:8},  // Gap
+    {wch:9},  // Passed
     {wch:12}, // Rej X-ray
-    {wch:12}, // Rej CW
+    {wch:12}, // Rej CWer
     {wch:6},  // %
-    {wch:12}, // Start
-    {wch:12}, // End
-    {wch:12}, // hrs
-    {wch:12}, // Other
-    {wch:12}, // Hyg
-    {wch:12}, // Break
-    {wch:12}, // Op plan
-    {wch:10}, // f1
-    {wch:10}, // f2
-    {wch:10}, // f3
-    {wch:10}, // f4
-    {wch:10}, // f5
-    {wch:12}, // Real Op
-    {wch:6},  // P
-    {wch:6},  // A
-    {wch:6},  // Q
-    {wch:6},  // OEE
-    {wch:30}  // Note
+    {wch:10}, // Start
+    {wch:10}, // End
+    {wch:9},  // hours
+    {wch:9},  // Other
+    {wch:11}, // Hygiene
+    {wch:9},  // Break
+    {wch:9},  // Op planned
+    {wch:8},  // Thay bao bì
+    {wch:9},  // Thiếu NL
+    {wch:8},  // Chuyển SKU
+    {wch:7},  // Hư máy
+    {wch:8},  // Chỉnh máy
+    {wch:9},  // Real op
+    {wch:11}, // Perf %
+    {wch:11}, // Avail %
+    {wch:10}, // Qual %
+    {wch:10}, // OEE %
+    {wch:22}, // Note
   ];
 
+  /* ── MERGES ── */
+  // Row index 0 = hdr1, row index 1 = hdr2
   ws['!merges'] = [
-    {s:{r:0,c:0},e:{r:1,c:0}}, {s:{r:0,c:1},e:{r:1,c:1}},
-    {s:{r:0,c:2},e:{r:1,c:2}}, {s:{r:0,c:3},e:{r:1,c:3}},
-    {s:{r:0,c:4},e:{r:1,c:4}}, {s:{r:0,c:5},e:{r:1,c:5}},
-    {s:{r:0,c:6},e:{r:1,c:6}}, {s:{r:0,c:7},e:{r:1,c:7}},
-    {s:{r:0,c:8},e:{r:0,c:10}}, {s:{r:0,c:11},e:{r:1,c:11}},
-    {s:{r:0,c:12},e:{r:0,c:16}}, {s:{r:0,c:17},e:{r:0,c:20}},
-    {s:{r:0,c:21},e:{r:0,c:22}}, {s:{r:0,c:23},e:{r:1,c:23}},
-    {s:{r:0,c:24},e:{r:0,c:28}}, {s:{r:0,c:29},e:{r:1,c:29}},
-    {s:{r:0,c:30},e:{r:1,c:30}}, {s:{r:0,c:31},e:{r:1,c:31}},
-    {s:{r:0,c:32},e:{r:1,c:32}}, {s:{r:0,c:33},e:{r:1,c:33}},
-    {s:{r:0,c:34},e:{r:1,c:34}}
+    // hdr1 single-cell labels that span both rows
+    {s:{r:0,c:0}, e:{r:1,c:0}},   // Date
+    {s:{r:0,c:1}, e:{r:1,c:1}},   // Day
+    {s:{r:0,c:2}, e:{r:1,c:2}},   // Line
+    {s:{r:0,c:3}, e:{r:1,c:3}},   // Số TT máy
+    {s:{r:0,c:4}, e:{r:1,c:4}},   // Tên OP
+    {s:{r:0,c:5}, e:{r:1,c:5}},   // Code
+    {s:{r:0,c:6}, e:{r:1,c:6}},   // Item
+    {s:{r:0,c:7}, e:{r:1,c:7}},   // NW(g)
+    // Capa (ea/h) spans cols 8-10
+    {s:{r:0,c:8}, e:{r:0,c:10}},
+    // Gap single col spans both rows
+    {s:{r:0,c:11},e:{r:1,c:11}},
+    // Product quantity spans 12-15
+    {s:{r:0,c:12},e:{r:0,c:15}},
+    // Total Operation time spans 16-19
+    {s:{r:0,c:16},e:{r:0,c:19}},
+    // Stop time planned spans 20-21
+    {s:{r:0,c:20},e:{r:0,c:21}},
+    // Operation time planned — single, spans both rows
+    {s:{r:0,c:22},e:{r:1,c:22}},
+    // Stop time unplanned spans 23-27
+    {s:{r:0,c:23},e:{r:0,c:27}},
+    // Real operation time — single, spans both rows
+    {s:{r:0,c:28},e:{r:1,c:28}},
+    // Performance, Availability, Quality, OEE, Note — single cols span both rows
+    {s:{r:0,c:29},e:{r:1,c:29}},
+    {s:{r:0,c:30},e:{r:1,c:30}},
+    {s:{r:0,c:31},e:{r:1,c:31}},
+    {s:{r:0,c:32},e:{r:1,c:32}},
+    {s:{r:0,c:33},e:{r:1,c:33}},
   ];
 
-  for(let r=0; r<wsData.length; r++){
-    for(let c=0; c<NCOLS; c++){
-      const cell = ws[colLetter(c)+(r+1)];
-      if(!cell) continue;
-      
-      let align = 'center', numFmt = undefined;
-      
-      if(r===0 || r===1){ align='center'; }
-      else {
-        if(c===4 || c===6){ align='left'; }
-        if([7,8,9,10,11,12,13,14,15].includes(c)){ align='right'; numFmt='#,##0'; }
-        if([16,30,31,32,33].includes(c)){
-          align='right';
-          if(typeof cell.v==='number') numFmt='0.00\"%\"';
+  /* ── STYLING ── */
+  const HDR_BG   = '1F3864';  // dark navy
+  const HDR_BG2  = '2F5496';  // medium navy for sub-header
+  const WHITE    = 'FFFFFF';
+  const BORDER_C = 'B8CCE4';
+
+  function sCell(addr, {bg, fg='000000', bold=false, sz=9, align='center', wrap=false, numFmt='', italic=false}={}){
+    if(!ws[addr]) ws[addr] = {t:'z', v:''};
+    ws[addr].s = {
+      font:      { name:'Calibri', sz, bold, italic, color:{rgb:fg} },
+      fill:      bg ? {patternType:'solid', fgColor:{rgb:bg}} : {patternType:'none'},
+      alignment: { horizontal:align, vertical:'center', wrapText:wrap },
+      border: {
+        top:   {style:'thin', color:{rgb:BORDER_C}},
+        bottom:{style:'thin', color:{rgb:BORDER_C}},
+        left:  {style:'thin', color:{rgb:BORDER_C}},
+        right: {style:'thin', color:{rgb:BORDER_C}},
+      },
+      numFmt,
+    };
+  }
+
+  // Style header row 1 (index 0 → Excel row 1)
+  for(let ci=0; ci<NCOLS; ci++){
+    sCell(colLetter(ci)+'1', {bg:HDR_BG, fg:WHITE, bold:true, sz:9, wrap:true});
+  }
+  // Style header row 2 (index 1 → Excel row 2)
+  for(let ci=0; ci<NCOLS; ci++){
+    sCell(colLetter(ci)+'2', {bg:HDR_BG2, fg:WHITE, bold:true, sz:8, wrap:true});
+  }
+
+  // Style data rows
+  for(let dr=0; dr<dataRows.length; dr++){
+    const {excelRow:er, c, r} = dataRows[dr];
+    const rowBG = dr%2===0 ? 'FFFFFF' : 'DCE6F1';
+
+    for(let ci=0; ci<NCOLS; ci++){
+      const addr = colLetter(ci)+er;
+      let bg=rowBG, fg='000000', numFmt='', align='center', bold=false;
+
+      // Numbers right-aligned
+      if([7,8,9,10,11,12,13,14].includes(ci)){ align='right'; numFmt='#,##0'; }
+      // % columns with conditional color
+      if([15,29,30,31,32].includes(ci)){
+        numFmt = '0.00%';
+        const val = ws[addr]?.v;
+        if(typeof val==='number' && val>0){
+          if([29,30,31,32].includes(ci)){
+            // OEE/Perf/Avail/Qual color coding
+            bg  = val>=0.85 ? 'C6EFCE' : val>=0.70 ? 'FFEB9C' : 'FFC7CE';
+            fg  = val>=0.85 ? '276221' : val>=0.70 ? '9C5700' : '9C0006';
+            bold= true;
+          }
         }
-        if(c===34){ align='left'; }
       }
-      
-      cell.s = {
-        alignment:{ vertical:'center', horizontal:align, wrapText:true },
-        border:{
-          top:{style:'thin'}, bottom:{style:'thin'},
-          left:{style:'thin'}, right:{style:'thin'}
-        }
-      };
-      
-      if(r===0 || r===1) {
-        cell.s.fill = {fgColor:{rgb:'FFCCCCCC'}};
-        cell.s.font = {bold:true};
-      }
-      
-      if(numFmt) cell.z = numFmt;
+      // Date left-aligned
+      if(ci===0){ align='left'; }
+      // Item left-aligned
+      if(ci===6){ align='left'; }
+      // Note left-aligned
+      if(ci===33){ align='left'; }
+
+      sCell(addr, {bg, fg, sz:9, align, numFmt, bold});
     }
   }
 
-  XLSX.utils.book_append_sheet(wb, ws, "Data");
-  
-  try {
-    XLSX.writeFile(wb, `OEE_Report_${fromDate}_${toDate}.xlsx`);
-    toast('✅ Xuất Excel thành công!', '#16A34A');
-  } catch(e){
-    console.error(e);
-    toast('❌ Lỗi xuất file', '#EF4444');
+  /* ── ROW HEIGHTS ── */
+  ws['!rows'] = [
+    {hpt:30},  // header row 1
+    {hpt:36},  // header row 2 (taller for sub-labels)
+  ];
+
+  XLSX.utils.book_append_sheet(wb, ws, 'OEE Report');
+
+  /* ── SUMMARY SHEET ── */
+  const sumData = [
+    ['OEE SUMMARY — ' + activeDate],
+    [],
+    ['Line','Máy','Runs','Op time (h)','Op planned (h)','Real op (h)',
+     'Passed','Rejected','Actual (ea/h)',
+     'Performance %','Availability %','Quality %','OEE %']
+  ];
+  ALL_MACHINES.forEach(m => {
+    const runs = getRuns(activeDate, m.id);
+    if(!runs.length) return;
+    const c2 = avgCalcs(runs);
+    const totPassed = runs.reduce((s,r2)=>s+(+r2.passed||0), 0);
+    const totRej    = runs.reduce((s,r2)=>s+(+r2.rejected||0)+(+r2.rejXray||0), 0);
+    const actualAvg = c2.realMin>0 ? totPassed/(c2.realMin/60) : 0;
+    sumData.push([
+      m.line, m.name, runs.length,
+      +(c2.opMin/60).toFixed(2),
+      +(c2.opPlanned/60).toFixed(2),
+      +(c2.realMin/60).toFixed(2),
+      totPassed, totRej,
+      actualAvg>0 ? Math.round(actualAvg) : '',
+      c2.perf  > 0 ? +(c2.perf /100).toFixed(4) : '',
+      c2.avail > 0 ? +(c2.avail/100).toFixed(4) : '',
+      c2.qual  > 0 ? +(c2.qual /100).toFixed(4) : '',
+      c2.oee   > 0 ? +(c2.oee  /100).toFixed(4) : '',
+    ]);
+  });
+  const ws2 = XLSX.utils.aoa_to_sheet(sumData);
+  ws2['!cols'] = [
+    {wch:18},{wch:14},{wch:6},{wch:11},{wch:13},{wch:11},
+    {wch:10},{wch:10},{wch:13},
+    {wch:14},{wch:14},{wch:12},{wch:10}
+  ];
+  // Style summary header
+  for(let ci=0;ci<13;ci++){
+    const addr=colLetter(ci)+'3';
+    if(!ws2[addr]) ws2[addr]={t:'z',v:''};
+    ws2[addr].s={font:{name:'Calibri',sz:9,bold:true,color:{rgb:'FFFFFF'}},fill:{patternType:'solid',fgColor:{rgb:'1F3864'}},alignment:{horizontal:'center',vertical:'center'}};
   }
+  // Format % cols in summary
+  ['J','K','L','M'].forEach(col=>{
+    for(let ri=4; ri<=sumData.length; ri++){
+      const addr=col+ri;
+      if(ws2[addr]&&typeof ws2[addr].v==='number'){
+        ws2[addr].s={numFmt:'0.00%',alignment:{horizontal:'center'}};
+      }
+    }
+  });
+  XLSX.utils.book_append_sheet(wb, ws2, 'Summary');
+
+  XLSX.writeFile(wb, `OEE_Report_${fromDate}${fromDate!==toDate?'_to_'+toDate:''}.xlsx`);
+  toast('✅ Xuất Excel thành công!', '#16A34A');
 }
+
 const exportCSV = exportExcel;
 
 // ══ NAV ═══════════════════════════════════════════════════════════════════
