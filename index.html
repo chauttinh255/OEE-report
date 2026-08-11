@@ -1982,11 +1982,11 @@ function exportExcel(fromDate=activeDate, toDate=activeDate){
         row[26] = (+r.stopSku    ||0) > 0 ? fmtHHMM((+r.stopSku)    /60) : '';
         row[27] = (+r.stopMachine||0) > 0 ? fmtHHMM((+r.stopMachine)/60) : '';
         row[28] = (+r.stopClean  ||0) > 0 ? fmtHHMM((+r.stopClean)  /60) : '';
-        row[29] = c.runMin > 0 ? fmtHHMM(c.runMin / 60) : '';
-        row[30] = c.P !== null ? +(c.P).toFixed(4) : '';
-        row[31] = c.A !== null ? +(c.A).toFixed(4) : '';
-        row[32] = c.Q !== null ? +(c.Q).toFixed(4) : '';
-        row[33] = c.OEE !== null ? +(c.OEE).toFixed(4) : '';
+        row[29] = c.realMin > 0 ? fmtHHMM(c.realMin / 60) : '';
+        row[30] = c.perf != null ? +(c.perf).toFixed(4) : '';
+        row[31] = c.avail != null ? +(c.avail).toFixed(4) : '';
+        row[32] = c.qual != null ? +(c.qual).toFixed(4) : '';
+        row[33] = c.oee != null ? +(c.oee).toFixed(4) : '';
         row[34] = r.reason || '';
 
         dataRows.push(row);
