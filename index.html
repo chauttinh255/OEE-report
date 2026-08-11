@@ -1916,7 +1916,7 @@ function exportExcel(fromDate=activeDate, toDate=activeDate){
   if(typeof XLSX==='undefined'){ toast('⚠ SheetJS chưa tải, thử lại','#D97706'); return; }
 
   const wb = XLSX.utils.book_new();
-  const NCOLS = 35;
+  const NCOLS = 34;
   const colLetter = i => i < 26
     ? String.fromCharCode(65+i)
     : String.fromCharCode(64+Math.floor(i/26)) + String.fromCharCode(65+(i%26));
@@ -1966,28 +1966,27 @@ function exportExcel(fromDate=activeDate, toDate=activeDate){
         row[10] = c.actualCalc > 0 ? Math.round(c.actualCalc) : '';
         row[11] = r.target ? Math.round((+r.target) - (c.actualCalc>0 ? c.actualCalc : 0)) : '';
         row[12] = passed || '';
-        row[13] = (passed && r.netG) ? +((passed * r.netG)/1000).toFixed(2) : '';
-        row[14] = rejX || '';
-        row[15] = rejC || '';
-        row[16] = totalOut > 0 ? (rejPct/100) : '';
-        row[17] = startDisp;
-        row[18] = endDisp;
-        row[19] = fmtHHMM(c.opMin / 60);
-        row[20] = '00:00';
-        row[21] = fmtHHMM((+r.stopHygiene||0)/60);
-        row[22] = fmtHHMM((+r.stopBreak  ||0)/60);
-        row[23] = fmtHHMM(opPlanHH);
-        row[24] = fmtHHMM((+r.stopBag    ||0)/60);
-        row[25] = fmtHHMM((+r.stopMat    ||0)/60);
-        row[26] = fmtHHMM((+r.stopSku    ||0)/60);
-        row[27] = fmtHHMM((+r.stopMachine||0)/60);
-        row[28] = fmtHHMM((+r.stopClean  ||0)/60);
-        row[29] = fmtHHMM(c.realMin / 60);
-        row[30] = c.perf != null ? +(c.perf/100).toFixed(4) : '';
-        row[31] = c.avail != null ? +(c.avail/100).toFixed(4) : '';
-        row[32] = c.qual != null ? +(c.qual/100).toFixed(4) : '';
-        row[33] = c.oee != null ? +(c.oee/100).toFixed(4) : '';
-        row[34] = r.reason || '';
+        row[13] = rejX || '';
+        row[14] = rejC || '';
+        row[15] = totalOut > 0 ? (rejPct/100) : '';
+        row[16] = startDisp;
+        row[17] = endDisp;
+        row[18] = fmtHHMM(c.opMin / 60);
+        row[19] = '00:00';
+        row[20] = fmtHHMM((+r.stopHygiene||0)/60);
+        row[21] = fmtHHMM((+r.stopBreak  ||0)/60);
+        row[22] = fmtHHMM(opPlanHH);
+        row[23] = fmtHHMM((+r.stopBag    ||0)/60);
+        row[24] = fmtHHMM((+r.stopMat    ||0)/60);
+        row[25] = fmtHHMM((+r.stopSku    ||0)/60);
+        row[26] = fmtHHMM((+r.stopMachine||0)/60);
+        row[27] = fmtHHMM((+r.stopClean  ||0)/60);
+        row[28] = fmtHHMM(c.realMin / 60);
+        row[29] = c.perf != null ? +(c.perf/100).toFixed(4) : '';
+        row[30] = c.avail != null ? +(c.avail/100).toFixed(4) : '';
+        row[31] = c.qual != null ? +(c.qual/100).toFixed(4) : '';
+        row[32] = c.oee != null ? +(c.oee/100).toFixed(4) : '';
+        row[33] = r.reason || '';
 
         dataRows.push(row);
       });
@@ -1999,26 +1998,25 @@ function exportExcel(fromDate=activeDate, toDate=activeDate){
   
   const headers1 = [
     'Date','Day','Line','Số thứ tự máy','Tên OP','Code','Item','NW (g)',
-    'Capa (ea/h)','','','','Product quantity','','','','','Total Operation time','','','Stop time planned','',
-    'Operation time planned','Stop time unplanned','','','','','Real operation time','Performance (P)','Availability (A)','Quality (Q)','OEE','Note'
+    'Capa (ea/h)','','','','Product quantity','','','','Total Operation time','','','Stop time planned','',
+    'Operation time planned','Stop time unplanned','','','','','Realoperation time','Performance(P)','Availability(A)','Quality(Q)','OEE','Note'
   ];
   const headers2 = [
-    '','','','','','','','','Designed','Target','Actual','Gap (ea/h)','Passed','Vol (kg)','Rejected by X ray','Rejected by CWer','%',
+    '','','','','','','','','Designed','Target','Actual','Gap (ea/h)','Passed','Rejected by X ray','Rejected by CWer','%',
     'Start (hh:mm:ss)','End (hh:mm:ss)','hours (hh:mm)','Other (hh:mm)','Hygiene (hh:mm)','Break (hh:mm)','hh:mm',
-    'Thay bao bì','Thiếu nguyên liệu','Chuyển SKU','Hư máy','Chỉnh máy','hh:mm','%','%','%','%'
+    'Thay bao bì','Thiếu nguyên liệu','Chuyển SKU','Hư máy','Chỉnh máy','','','','','',''
   ];
   
   XLSX.utils.sheet_add_aoa(ws, [headers1, headers2], {origin: 'A1'});
   
   for(let i=0; i<8; i++) merges.push({s:{r:0,c:i}, e:{r:1,c:i}});
   merges.push({s:{r:0,c:8}, e:{r:0,c:11}});
-  merges.push({s:{r:0,c:12}, e:{r:0,c:16}});
-  merges.push({s:{r:0,c:17}, e:{r:0,c:20}});
-  merges.push({s:{r:0,c:21}, e:{r:0,c:22}});
-  merges.push({s:{r:0,c:23}, e:{r:1,c:23}});
-  merges.push({s:{r:0,c:24}, e:{r:0,c:28}});
-  merges.push({s:{r:0,c:29}, e:{r:1,c:29}});
-  for(let i=30; i<35; i++) merges.push({s:{r:0,c:i}, e:{r:1,c:i}});
+  merges.push({s:{r:0,c:12}, e:{r:0,c:15}});
+  merges.push({s:{r:0,c:16}, e:{r:0,c:19}});
+  merges.push({s:{r:0,c:20}, e:{r:0,c:21}});
+  merges.push({s:{r:0,c:22}, e:{r:1,c:22}});
+  merges.push({s:{r:0,c:23}, e:{r:0,c:27}});
+  for(let i=28; i<34; i++) merges.push({s:{r:0,c:i}, e:{r:1,c:i}});
 
   ws['!merges'] = merges;
   
@@ -2045,16 +2043,14 @@ function exportExcel(fromDate=activeDate, toDate=activeDate){
         ws[cellAddress].s.alignment = { horizontal: "center", vertical: "center", wrapText: true };
       }
       
-      // format column 16 (%)
-      if (R > 1 && C === 16 && typeof ws[cellAddress].v === 'number') {
+      if (R > 1 && C === 15 && typeof ws[cellAddress].v === 'number') {
         ws[cellAddress].z = '0.00%';
       }
-      // Note: Columns 30-33 are decimals, we don't set .z to '%' anymore, per template screenshot.
     }
   }
 
   const wscols = [];
-  for(let i=0; i<NCOLS; i++) wscols.push({wpx: (i===5||i===6||i===34)?120:80});
+  for(let i=0; i<NCOLS; i++) wscols.push({wpx: (i===5||i===6||i===33)?120:80});
   ws['!cols'] = wscols;
 
   XLSX.utils.book_append_sheet(wb, ws, "Data");
