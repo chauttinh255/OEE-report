@@ -1922,9 +1922,9 @@ function exportExcel(fromDate=activeDate, toDate=activeDate){
     : String.fromCharCode(64+Math.floor(i/26)) + String.fromCharCode(65+(i%26));
 
   const fmtHHMM = (hrs) => {
-    if(!hrs || isNaN(hrs)) return '';
-    const h = Math.floor(hrs);
-    const m = Math.round((hrs-h)*60);
+    if(hrs === '' || hrs === null || isNaN(hrs)) return '00:00';
+    const h = Math.floor(hrs || 0);
+    const m = Math.round(((hrs || 0)-h)*60);
     return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
   };
 
@@ -1964,29 +1964,29 @@ function exportExcel(fromDate=activeDate, toDate=activeDate){
         row[8] = r.designed ? +r.designed : '';
         row[9] = r.target ? +r.target : '';
         row[10] = c.actualCalc > 0 ? Math.round(c.actualCalc) : '';
-        row[11] = (c.actualCalc > 0 && r.target) ? Math.round(c.actualCalc - (+r.target)) : '';
+        row[11] = r.target ? Math.round((+r.target) - (c.actualCalc>0 ? c.actualCalc : 0)) : '';
         row[12] = passed || '';
         row[13] = (passed && r.netG) ? +((passed * r.netG)/1000).toFixed(2) : '';
         row[14] = rejX || '';
         row[15] = rejC || '';
-        row[16] = totalOut > 0 ? +(rejPct).toFixed(2) : '';
+        row[16] = totalOut > 0 ? (rejPct/100) : '';
         row[17] = startDisp;
         row[18] = endDisp;
-        row[19] = c.opMin > 0 ? fmtHHMM(c.opMin / 60) : '';
-        row[20] = '';
-        row[21] = (+r.stopHygiene||0) > 0 ? fmtHHMM((+r.stopHygiene)/60) : '00:00';
-        row[22] = (+r.stopBreak  ||0) > 0 ? fmtHHMM((+r.stopBreak)  /60) : '00:00';
-        row[23] = opPlanHH > 0 ? fmtHHMM(opPlanHH) : '';
-        row[24] = (+r.stopBag    ||0) > 0 ? fmtHHMM((+r.stopBag)    /60) : '';
-        row[25] = (+r.stopMat    ||0) > 0 ? fmtHHMM((+r.stopMat)    /60) : '';
-        row[26] = (+r.stopSku    ||0) > 0 ? fmtHHMM((+r.stopSku)    /60) : '';
-        row[27] = (+r.stopMachine||0) > 0 ? fmtHHMM((+r.stopMachine)/60) : '';
-        row[28] = (+r.stopClean  ||0) > 0 ? fmtHHMM((+r.stopClean)  /60) : '';
-        row[29] = c.realMin > 0 ? fmtHHMM(c.realMin / 60) : '';
-        row[30] = c.perf != null ? +(c.perf).toFixed(4) : '';
-        row[31] = c.avail != null ? +(c.avail).toFixed(4) : '';
-        row[32] = c.qual != null ? +(c.qual).toFixed(4) : '';
-        row[33] = c.oee != null ? +(c.oee).toFixed(4) : '';
+        row[19] = fmtHHMM(c.opMin / 60);
+        row[20] = '00:00';
+        row[21] = fmtHHMM((+r.stopHygiene||0)/60);
+        row[22] = fmtHHMM((+r.stopBreak  ||0)/60);
+        row[23] = fmtHHMM(opPlanHH);
+        row[24] = fmtHHMM((+r.stopBag    ||0)/60);
+        row[25] = fmtHHMM((+r.stopMat    ||0)/60);
+        row[26] = fmtHHMM((+r.stopSku    ||0)/60);
+        row[27] = fmtHHMM((+r.stopMachine||0)/60);
+        row[28] = fmtHHMM((+r.stopClean  ||0)/60);
+        row[29] = fmtHHMM(c.realMin / 60);
+        row[30] = c.perf != null ? +(c.perf/100).toFixed(4) : '';
+        row[31] = c.avail != null ? +(c.avail/100).toFixed(4) : '';
+        row[32] = c.qual != null ? +(c.qual/100).toFixed(4) : '';
+        row[33] = c.oee != null ? +(c.oee/100).toFixed(4) : '';
         row[34] = r.reason || '';
 
         dataRows.push(row);
@@ -2044,9 +2044,12 @@ function exportExcel(fromDate=activeDate, toDate=activeDate){
         ws[cellAddress].s.font.bold = true;
         ws[cellAddress].s.alignment = { horizontal: "center", vertical: "center", wrapText: true };
       }
-      if(R > 1 && C >= 30 && C <= 33 && typeof ws[cellAddress].v === 'number') {
+      
+      // format column 16 (%)
+      if (R > 1 && C === 16 && typeof ws[cellAddress].v === 'number') {
         ws[cellAddress].z = '0.00%';
       }
+      // Note: Columns 30-33 are decimals, we don't set .z to '%' anymore, per template screenshot.
     }
   }
 
